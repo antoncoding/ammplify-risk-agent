@@ -22,7 +22,7 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="mt-8 flex w-full justify-center gap-4 px-4 sm:w-auto sm:flex-row">
-            <Link href="/demo" className="block w-full sm:w-auto">
+            <Link href="/chat" className="block w-full sm:w-auto">
               <Button variant="cta" className="w-full px-10 py-4 font-zen" size="lg">
                 Get Started
               </Button>

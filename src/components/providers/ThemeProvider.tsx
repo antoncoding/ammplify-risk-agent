@@ -6,7 +6,7 @@ import { ToastContainer } from 'react-toastify';
 export function ThemeProviders({ children }: { children: React.ReactNode }) {
   return (
     <NextThemesProvider
-      attribute="class"
+      attribute="data-theme"
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
