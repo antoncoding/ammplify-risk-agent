@@ -25,7 +25,7 @@ const ChartWithStats = () => {
       height: 320,
       layout: { background: { color: 'transparent' }, textColor: '#888' },
       grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } },
-      timeScale: { timeVisible: true, secondsVisible: false },
+      timeScale: { timeVisible: true, secondsVisible: true },
       rightPriceScale: { borderColor: '#ccc' },
     });
     // Map to { time, value } and dedupe by time string (hour precision)
@@ -33,7 +33,7 @@ const ChartWithStats = () => {
       .slice()
       .sort((a, b) => a.timestamp - b.timestamp)
       .map(p => ({
-        time: new Date(p.timestamp * 1000).toISOString().slice(0, 13) + ':00:00Z',
+        time: new Date(p.timestamp * 1000).toISOString().slice(0, 10),
         value: p.price,
         originalTimestamp: p.timestamp
       }));
@@ -65,7 +65,7 @@ const ChartWithStats = () => {
     <div className="w-full max-w-4xl bg-card rounded-lg shadow p-6 flex flex-col gap-4">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <div className="text-lg font-semibold">ETH/USDC Price Chart</div>
+          <div className="text-lg font-semibold">ETH/USDC</div>
           <div className="text-xs text-muted-foreground">Powered by Uniswap v3 subgraph</div>
         </div>
         <div className="flex flex-col gap-1 text-sm">
