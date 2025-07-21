@@ -8,8 +8,6 @@ const ChartStats = () => {
     <div className="p-4 bg-muted rounded shadow mb-4">
       <div>Current Price: {currentPrice}</div>
       <div>Volatility: {volatility}</div>
-      <div>Drift: {drift}</div>
-      <div>User Prediction: {userPrediction.min} ~ {userPrediction.max} in {userPrediction.timeHorizon} days</div>
     </div>
   );
 };
