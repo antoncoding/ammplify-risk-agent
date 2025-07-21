@@ -3,7 +3,6 @@
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { AppProvider } from '@/contexts/MarketsContext';
 import { ThemeProviders } from './ThemeProvider';
 
 // Create a client with default configuration
@@ -25,9 +24,7 @@ export function ClientProviders({ children }: ClientProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProviders>
-        <AppProvider>
           {children}
-        </AppProvider>
       </ThemeProviders>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
