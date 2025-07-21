@@ -59,9 +59,9 @@ function NavbarTitle() {
         href="/"
         passHref
         className="text-center font-zen text-lg font-medium text-primary no-underline"
-        aria-label="Web3 Next.js Template"
+        aria-label="Ammplify Risk Agent"
       >
-        Web3 Template
+        Ammplify Risk Agent
       </Link>
     </div>
   );

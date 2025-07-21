@@ -1,13 +1,13 @@
-# Web3 Next.js Template
+# Ammplify Risk Agent
 
-A modern web3 template built with Next.js, TypeScript, Tailwind CSS, and shadcn/ui.
+Ammplify Risk Agent is a modern web3 risk analysis tool for AMMs and DeFi protocols, built with Next.js, TypeScript, and Tailwind CSS.
 
 ## Quick Start
 
 1. **Clone and install:**
 ```bash
-git clone https://github.com/your-username/web3-next-template.git
-cd web3-next-template
+git clone https://github.com/your-username/ammplify-risk-agent.git
+cd ammplify-risk-agent
 pnpm install
 ```
 

@@ -28,6 +28,9 @@ initAnalytics();
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${zen.variable} ${inter.variable} ${monospace.variable}`}>
+      <head>
+        <title>Ammplify Risk Agent</title>
+      </head>
       <body>
         <ThemeProviders>
           <OnchainProviders>

@@ -1,5 +1,6 @@
 {
-  "name": "web3-next-template",
+  "name": "ammplify-risk-agent",
+  "description": "Ammplify Risk Agent: Modern web3 risk analysis tool for AMMs and DeFi.",
   "version": "0.1.0",
   "private": true,
   "scripts": {
