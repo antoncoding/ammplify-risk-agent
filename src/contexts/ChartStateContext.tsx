@@ -19,6 +19,9 @@ export type ChartState = {
   setUserPrediction: (prediction: UserPrediction) => void;
   setVolatility: (vol: number) => void;
   setDrift: (drift: number) => void;
+  setTimeHorizon: (days: number) => void;
+  setPredictionFromDriftVol: (drift: number, vol: number, timeHorizon: number) => void;
+  setDriftVolFromPrediction: (min: number, max: number, timeHorizon: number) => void;
 };
 
 const ChartStateContext = createContext<ChartState | undefined>(undefined);
@@ -29,6 +32,38 @@ export const ChartStateProvider = ({ children }: { children: React.ReactNode }) 
   const [userPrediction, setUserPrediction] = useState<UserPrediction>({ min: 0, max: 0, timeHorizon: 30 });
   const [volatility, setVolatility] = useState<number>(0);
   const [drift, setDrift] = useState<number>(0);
+
+  // Helper: convert drift/vol -> min/max prediction (1 stddev range, geometric Brownian motion)
+  const setPredictionFromDriftVol = (drift: number, vol: number, timeHorizon: number) => {
+    if (!currentPrice || timeHorizon <= 0) return;
+    const t = timeHorizon / 365;
+    // 1 stddev up/down from expected value
+    const expected = currentPrice * Math.exp(drift * t);
+    const stddev = vol * Math.sqrt(t);
+    const min = expected * Math.exp(-stddev);
+    const max = expected * Math.exp(stddev);
+    setUserPrediction({ min, max, timeHorizon });
+    setVolatility(vol);
+    setDrift(drift);
+  };
+
+  // Helper: convert min/max prediction -> drift/vol (assume symmetric, solve for drift/vol)
+  const setDriftVolFromPrediction = (min: number, max: number, timeHorizon: number) => {
+    if (!currentPrice || timeHorizon <= 0 || min <= 0 || max <= 0) return;
+    const t = timeHorizon / 365;
+    // Estimate expected = sqrt(min*max), stddev = (ln(max/min))/2
+    const expected = Math.sqrt(min * max);
+    const stddev = Math.log(max / min) / 2;
+    const drift = Math.log(expected / currentPrice) / t;
+    const vol = stddev / Math.sqrt(t);
+    setUserPrediction({ min, max, timeHorizon });
+    setVolatility(vol);
+    setDrift(drift);
+  };
+
+  const setTimeHorizon = (days: number) => {
+    setUserPrediction(pred => ({ ...pred, timeHorizon: days }));
+  };
 
   return (
     <ChartStateContext.Provider
@@ -43,6 +78,9 @@ export const ChartStateProvider = ({ children }: { children: React.ReactNode }) 
         setUserPrediction,
         setVolatility,
         setDrift,
+        setTimeHorizon,
+        setPredictionFromDriftVol,
+        setDriftVolFromPrediction,
       }}
     >
       {children}

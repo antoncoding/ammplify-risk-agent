@@ -1,163 +1,152 @@
 import React, { useState } from 'react';
-import { FaSeedling, FaComments, FaBolt } from 'react-icons/fa';
+import { FaComments, FaBolt, FaExchangeAlt } from 'react-icons/fa';
+import { GoQuestion } from 'react-icons/go';
 import { useChartState } from '@/contexts/ChartStateContext';
-import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import PredictionResult from './PredictionResult';
 
 const InputArea = () => {
   const {
     volatility,
     drift,
-    setVolatility,
-    setDrift,
+    setPredictionFromDriftVol,
     userPrediction,
-    setUserPrediction,
+    currentPrice,
   } = useChartState();
-  const [mode, setMode] = useState<'easy' | 'chat' | 'pro'>('easy');
-  const [chatValue, setChatValue] = useState('');
-  // For animation
-  const [showSection, setShowSection] = useState<'easy' | 'chat' | 'pro' | ''>('easy');
+
+  // Local state for controlled inputs
+  const [localVol, setLocalVol] = useState(volatility);
+  const [localDrift, setLocalDrift] = useState(drift);
+  const [localTime, setLocalTime] = useState(userPrediction.timeHorizon);
+  const [showResult, setShowResult] = useState(false);
+  const [calcDrift, setCalcDrift] = useState(localDrift);
+  const [calcVol, setCalcVol] = useState(localVol);
+  const [calcTime, setCalcTime] = useState(localTime);
+
+  // Update prediction as user types
   React.useEffect(() => {
-    // Animate out, then in
-    setShowSection('');
-    const t = setTimeout(() => setShowSection(mode), 120);
-    return () => clearTimeout(t);
-  }, [mode]);
+    setPredictionFromDriftVol(localDrift, localVol, localTime);
+  }, [localDrift, localVol, localTime, setPredictionFromDriftVol]);
+
+  const handleCalculate = () => {
+    setCalcDrift(localDrift);
+    setCalcVol(localVol);
+    setCalcTime(localTime);
+    setShowResult(true);
+  };
 
   return (
-    <div className="w-full max-w-4xl bg-card rounded-lg shadow p-6 flex flex-col gap-6">
-      {/* Mode Switch - Switch style toggle group */}
-      <div className="flex justify-end mb-4">
-        <div className="inline-flex rounded-md shadow-sm border border-muted bg-muted overflow-hidden">
-          <button
-            className={`px-5 py-2 flex items-center gap-2 text-lg font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${mode==='easy' ? 'bg-background text-primary' : 'bg-muted text-muted-foreground'} ${mode==='easy' ? 'z-10' : ''}`}
-            onClick={() => setMode('easy')}
-            aria-label="Easy mode"
-            type="button"
-          >
-            <FaSeedling className="text-xl" />
-          </button>
-          <button
-            className={`px-5 py-2 flex items-center gap-2 text-lg font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary border-l border-muted ${mode==='chat' ? 'bg-background text-primary' : 'bg-muted text-muted-foreground'} ${mode==='chat' ? 'z-10' : ''}`}
-            onClick={() => setMode('chat')}
-            aria-label="Chat mode"
-            type="button"
-          >
-            <FaComments className="text-xl" />
-          </button>
-          <button
-            className={`px-5 py-2 flex items-center gap-2 text-lg font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary border-l border-muted ${mode==='pro' ? 'bg-background text-primary' : 'bg-muted text-muted-foreground'} ${mode==='pro' ? 'z-10' : ''}`}
-            onClick={() => setMode('pro')}
-            aria-label="Pro mode"
-            type="button"
-          >
-            <FaBolt className="text-xl" />
-          </button>
+    <div className="w-full max-w-4xl bg-card rounded-lg shadow p-6 flex flex-col gap-4 font-zen">
+      {/* Title and Description */}
+      <div className="mb-2">
+        <div className="text-lg font-semibold">Your Market Prediction</div>
+        <div className="text-xs text-muted-foreground">
+          Share your view on future price movement by entering your expected trend (drift) and uncertainty (volatility).
         </div>
       </div>
-      {/* Animated Section */}
-      <div className="min-h-[120px]">
-        <div className={`transition-opacity duration-200 ${showSection==='easy' ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'} w-full`}>
-          {/* Easy Mode: Prediction Range Input */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-medium">Prediction Range</span>
+      {/* Input Fields */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-end gap-4 w-full">
+          <div className="flex flex-col items-start gap-1 flex-1">
+            <div className="flex items-center gap-1">
+              <label htmlFor="volatility" className="text-xs font-medium text-muted-foreground">Volatility</label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="cursor-help text-muted-foreground">ⓘ</span>
+                    <GoQuestion className="cursor-help text-muted-foreground text-xs" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    <span>What do you think is the likely minimum and maximum price in your chosen time frame?</span>
+                    <span>Annualized standard deviation of price returns. Higher values mean more uncertainty.</span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <div className="flex gap-2">
+            <div className="relative w-full">
               <input
+                id="volatility"
                 type="number"
-                value={userPrediction.min}
-                onChange={e => setUserPrediction({ ...userPrediction, min: Number(e.target.value) })}
-                className="p-2 border rounded bg-background text-base w-1/2"
-                placeholder="Min price"
+                value={localVol}
+                onChange={e => setLocalVol(Number(e.target.value))}
+                className="w-full p-3 pr-10 border rounded bg-background text-sm"
+                placeholder="0.25"
+                min={0}
+                step={0.01}
               />
-              <input
-                type="number"
-                value={userPrediction.max}
-                onChange={e => setUserPrediction({ ...userPrediction, max: Number(e.target.value) })}
-                className="p-2 border rounded bg-background text-base w-1/2"
-                placeholder="Max price"
-              />
-              <input
-                type="number"
-                value={userPrediction.timeHorizon}
-                onChange={e => setUserPrediction({ ...userPrediction, timeHorizon: Number(e.target.value) })}
-                className="p-2 border rounded bg-background text-base w-1/3"
-                placeholder="Days"
-              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">%</span>
             </div>
-            <span className="text-xs text-muted-foreground">E.g. 1800 ~ 2400 in 30 days</span>
           </div>
-        </div>
-        <div className={`transition-opacity duration-200 ${showSection==='chat' ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'} w-full`}>
-          {/* Chat Mode: Chat Input */}
-          <form className="flex gap-2" onSubmit={e => { e.preventDefault(); setChatValue(''); }}>
-            <input
-              type="text"
-              value={chatValue}
-              onChange={e => setChatValue(e.target.value)}
-              className="flex-1 p-2 border rounded bg-background text-base"
-              placeholder="Type your question about volatility, drift, or the chart..."
-            />
-            <Button type="submit" variant="default">Send</Button>
-          </form>
-        </div>
-        <div className={`transition-opacity duration-200 ${showSection==='pro' ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'} w-full`}>
-          {/* Pro Mode: Volatility + Drift on one line */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-medium">Volatility</span>
+          <div className="flex flex-col items-start gap-1 flex-1">
+            <div className="flex items-center gap-1">
+              <label htmlFor="drift" className="text-xs font-medium text-muted-foreground">Drift</label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="cursor-help text-muted-foreground">ⓘ</span>
+                    <GoQuestion className="cursor-help text-muted-foreground text-xs" />
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    <span>Volatility measures how much the price fluctuates over time. Higher means more uncertainty.</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <span className="text-base font-medium ml-6">Drift</span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-help text-muted-foreground">ⓘ</span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <span>Drift is the expected average return or trend direction over time.</span>
+                    <span>Expected average return or trend direction over time.</span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <div className="flex gap-2">
+            <div className="relative w-full">
               <input
+                id="drift"
                 type="number"
-                value={volatility}
-                onChange={e => setVolatility(Number(e.target.value))}
-                className="p-2 border rounded bg-background text-base w-1/2"
-                placeholder="e.g. 0.25"
+                value={localDrift}
+                onChange={e => setLocalDrift(Number(e.target.value))}
+                className="w-full p-3 pr-10 border rounded bg-background text-sm"
+                placeholder="0.05"
+                min={-1}
+                step={0.01}
               />
-              <input
-                type="number"
-                value={drift}
-                onChange={e => setDrift(Number(e.target.value))}
-                className="p-2 border rounded bg-background text-base w-1/2"
-                placeholder="e.g. 0.05"
-              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">%</span>
             </div>
-            <span className="text-xs text-muted-foreground">Annualized standard deviation (e.g. 0.25 = 25%), Drift (e.g. 0.05 = 5%)</span>
           </div>
+          <div className="flex flex-col items-start gap-1 flex-1">
+            <div className="flex items-center gap-1">
+              <label htmlFor="timeHorizon" className="text-xs font-medium text-muted-foreground">Time Horizon</label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <GoQuestion className="cursor-help text-muted-foreground text-xs" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <span>Number of days into the future for your prediction.</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="relative w-full">
+              <input
+                id="timeHorizon"
+                type="number"
+                value={localTime}
+                onChange={e => setLocalTime(Number(e.target.value))}
+                className="w-full p-3 pr-14 border rounded bg-background text-sm"
+                placeholder="30"
+                min={1}
+                step={1}
+              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">days</span>
+            </div>
+          </div>
+          <button
+            className="py-3 px-6 rounded bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition"
+            onClick={handleCalculate}
+            type="button"
+          >
+            Calculate
+          </button>
         </div>
+        {showResult && (
+          <PredictionResult
+            drift={calcDrift}
+            vol={calcVol}
+            time={calcTime}
+            currentPrice={currentPrice}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { useChartState } from '@/contexts/ChartStateContext';
 import { useUniswapPriceHistory } from '@/hooks/useUniswapPriceHistory';
-import { ColorType, createChart, AreaSeries } from 'lightweight-charts';
+import { ColorType, createChart, AreaSeries, LineSeries } from 'lightweight-charts';
 
 const POOL_ADDRESS = '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640'; // ETH/USDC
 const API_KEY = process.env.NEXT_PUBLIC_THEGRAPH_API_KEY || '';
 
 const ChartWithStats = () => {
-  const { priceHistory, setPriceHistory, volatility, drift } = useChartState();
+  const { priceHistory, setPriceHistory, volatility, drift, userPrediction } = useChartState();
   const { data, loading, error } = useUniswapPriceHistory({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, limit: 24 * 90 });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -15,12 +15,9 @@ const ChartWithStats = () => {
     if (data.length) setPriceHistory(data);
   }, [data, setPriceHistory]);
 
-  console.log('priceHistory', data);
-
   useEffect(() => {
     if (!chartContainerRef.current || !priceHistory.length) return;
     chartContainerRef.current.innerHTML = '';
-    // Ensure the container is relatively positioned for absolute overlays
     chartContainerRef.current.style.position = 'relative';
 
     const chart = createChart(chartContainerRef.current, {
@@ -31,7 +28,6 @@ const ChartWithStats = () => {
       timeScale: { timeVisible: true, secondsVisible: true },
       rightPriceScale: { borderColor: '#ccc' },
     });
-    // Map to { time, value } and dedupe by time string (hour precision)
     const mappedData = priceHistory
       .slice()
       .sort((a, b) => a.timestamp - b.timestamp)
@@ -41,14 +37,10 @@ const ChartWithStats = () => {
         originalTimestamp: p.timestamp
       }));
     const dedupedData = mappedData.filter((point, idx, arr) => idx === 0 || point.time !== arr[idx - 1].time);
-    // Debug log
-    // console.log('Chart data for setData:', dedupedData);
-
-    // Use Tailwind's primary color or fallback
-    const primary = '#3B82F6'; // Tailwind blue-500
+    const primary = '#3B82F6';
     const areaSeries = chart.addSeries(AreaSeries, {
       topColor: primary,
-      bottomColor: 'rgba(59, 130, 246, 0.18)', // blue-500 with opacity
+      bottomColor: 'rgba(59, 130, 246, 0.18)',
       lineColor: primary,
       lineWidth: 2,
       crosshairMarkerVisible: false,
@@ -56,8 +48,6 @@ const ChartWithStats = () => {
     areaSeries.setData(
       dedupedData.map(({ time, value }) => ({ time, value }))
     );
-
-    // Add a price line at the latest price
     if (dedupedData.length > 0) {
       areaSeries.createPriceLine({
         price: dedupedData[dedupedData.length - 1].value,
@@ -68,7 +58,18 @@ const ChartWithStats = () => {
         title: 'Latest'
       });
     }
-
+    // --- Prediction Range Visualization ---
+    if (userPrediction.min > 0 && userPrediction.max > 0) {
+      // Draw min/max as price lines using line series
+      const minLine = chart.addSeries(LineSeries, { color: '#10B981', lineWidth: 2 });
+      minLine.setData(
+        dedupedData.map(({ time }) => ({ time, value: userPrediction.min }))
+      );
+      const maxLine = chart.addSeries(LineSeries, { color: '#EF4444', lineWidth: 2 });
+      maxLine.setData(
+        dedupedData.map(({ time }) => ({ time, value: userPrediction.max }))
+      );
+    }
     // --- Legend logic start ---
     const legend = document.createElement('div');
     legend.style.position = 'absolute';
@@ -94,12 +95,15 @@ const ChartWithStats = () => {
     };
     const setLegendHtml = (date: string, price: string) => {
       legend.innerHTML = `<div style=\"font-size:20px;margin:2px 0;\">${price}</div><div style=\"font-size:13px;color:#666;\">${date}</div>`;
+      if (userPrediction.min > 0 && userPrediction.max > 0) {
+        legend.innerHTML += `<div style=\"font-size:13px;color:#059669;\">Min: ${formatPrice(userPrediction.min)}</div>`;
+        legend.innerHTML += `<div style=\"font-size:13px;color:#dc2626;\">Max: ${formatPrice(userPrediction.max)}</div>`;
+        legend.innerHTML += `<div style=\"font-size:13px;color:#666;\">Horizon: ${userPrediction.timeHorizon} days</div>`;
+      }
     };
-    // Show latest by default
     if (dedupedData.length > 0) {
       setLegendHtml(formatDate(dedupedData[dedupedData.length-1].originalTimestamp), formatPrice(dedupedData[dedupedData.length-1].value));
     }
-
     const updateLegend = (param: any) => {
       let price = '';
       let date = '';
@@ -107,7 +111,6 @@ const ChartWithStats = () => {
         const bar = param.seriesData.get(areaSeries);
         if (bar) {
           price = formatPrice(bar.value !== undefined ? bar.value : bar.close);
-          // param.time is in YYYY-MM-DD, find the original timestamp
           const found = dedupedData.find(d => d.time === param.time);
           date = found ? formatDate(found.originalTimestamp) : param.time;
         }
@@ -118,15 +121,12 @@ const ChartWithStats = () => {
       setLegendHtml(date, price);
     };
     chart.subscribeCrosshairMove(updateLegend);
-    // --- Legend logic end ---
-
     chart.timeScale().fitContent();
-    // Note: setMarkers is not supported in lightweight-charts v5 for line series. For advanced markers/tools, consider a custom overlay or a different charting library.
     return () => {
       chart.remove();
       if (legend && legend.parentNode) legend.parentNode.removeChild(legend);
     };
-  }, [priceHistory, volatility]);
+  }, [priceHistory, volatility, drift, userPrediction]);
 
   return (
     <div className="w-full max-w-4xl bg-card rounded-lg shadow p-6 flex flex-col gap-4">
