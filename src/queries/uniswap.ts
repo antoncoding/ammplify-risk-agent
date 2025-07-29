@@ -26,12 +26,16 @@ export function poolDataQuery(poolAddress: string) {
         id
         symbol
       }
-      poolDayData(first: 2, orderBy: date, orderDirection: desc) {
+      poolDayData(first: 90, orderBy: date, orderDirection: desc) {
         volumeUSD
         volumeToken0
         volumeToken1
         date
         feesUSD
+        high
+        low
+        open
+        close
       }
     }
   }`;

@@ -1,18 +1,32 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useChartState } from '@/contexts/ChartStateContext';
 import { useUniswapPriceHistory } from '@/hooks/useUniswapPriceHistory';
-import { usePoolStats } from '@/hooks/usePoolStats';
+import { usePoolStats, LookbackPeriod } from '@/hooks/usePoolStats';
 import { parsePoolAddress } from '@/utils/poolUtils';
 import PoolMetrics from './PoolMetrics';
 import { createChart, AreaSeries, LineSeries } from 'lightweight-charts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Helper function to convert lookback period to days
+const getDaysFromLookbackPeriod = (period: LookbackPeriod): number => {
+  switch (period) {
+    case '3 months': return 90;
+    case '2 months': return 60;
+    case '1 month': return 30;
+    case '2 weeks': return 14;
+    case '1 week': return 7;
+    default: return 90;
+  }
+};
 
 const POOL_ADDRESS = '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640'; // ETH/USDC
 const API_KEY = process.env.NEXT_PUBLIC_THEGRAPH_API_KEY ?? '';
 
 const ChartWithStats = () => {
   const { priceHistory, setPriceHistory, volatility, drift, userPrediction } = useChartState();
+  const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('3 months');
   const { data, loading, error } = useUniswapPriceHistory({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, limit: 24 * 90 });
-  const { stats, poolData, loading: statsLoading } = usePoolStats({ poolAddress: POOL_ADDRESS, apiKey: API_KEY });
+  const { stats, poolData, loading: statsLoading } = usePoolStats({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, lookbackPeriod });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
   
   // Get token pair info from real data or fallback to parsing
@@ -72,6 +86,48 @@ const ChartWithStats = () => {
         title: 'Latest'
       });
     }
+
+    // --- Lookback Period High/Low Visualization ---
+    if (stats.high > 0 && stats.low > 0) {
+      // Add high price line
+      areaSeries.createPriceLine({
+        price: stats.high,
+        color: '#10B981',
+        lineWidth: 2,
+        lineStyle: 1, // Solid line
+        axisLabelVisible: true,
+        title: `High (${lookbackPeriod})`
+      });
+
+      // Add low price line
+      areaSeries.createPriceLine({
+        price: stats.low,
+        color: '#EF4444',
+        lineWidth: 2,
+        lineStyle: 1, // Solid line
+        axisLabelVisible: true,
+        title: `Low (${lookbackPeriod})`
+      });
+
+      // Highlight the selected period by setting visible range
+      if (dedupedData.length > 0) {
+        const daysToLookback = getDaysFromLookbackPeriod(lookbackPeriod);
+        const endIndex = dedupedData.length - 1;
+        const startIndex = Math.max(0, endIndex - daysToLookback + 1);
+        
+        if (startIndex < endIndex) {
+          const startTime = dedupedData[startIndex].time;
+          const endTime = dedupedData[endIndex].time;
+          
+          // Set visible range to focus on the selected period
+          chart.timeScale().setVisibleRange({
+            from: startTime,
+            to: endTime
+          });
+        }
+      }
+    }
+
     // --- Prediction Range Visualization ---
     if (userPrediction.min > 0 && userPrediction.max > 0) {
       // Draw min/max as price lines using line series
@@ -109,6 +165,14 @@ const ChartWithStats = () => {
     };
     const setLegendHtml = (date: string, price: string) => {
       legend.innerHTML = `<div style=\"font-size:20px;margin:2px 0;\">${price}</div><div style=\"font-size:13px;color:#666;\">${date}</div>`;
+      
+      // Add lookback period info
+      if (stats.high > 0 && stats.low > 0) {
+        legend.innerHTML += `<div style=\"font-size:13px;color:#059669;\">Period High: ${formatPrice(stats.high)}</div>`;
+        legend.innerHTML += `<div style=\"font-size:13px;color:#dc2626;\">Period Low: ${formatPrice(stats.low)}</div>`;
+        legend.innerHTML += `<div style=\"font-size:13px;color:#666;\">${lookbackPeriod}</div>`;
+      }
+      
       if (userPrediction.min > 0 && userPrediction.max > 0) {
         legend.innerHTML += `<div style=\"font-size:13px;color:#059669;\">Min: ${formatPrice(userPrediction.min)}</div>`;
         legend.innerHTML += `<div style=\"font-size:13px;color:#dc2626;\">Max: ${formatPrice(userPrediction.max)}</div>`;
@@ -140,20 +204,36 @@ const ChartWithStats = () => {
       chart.remove();
       if (legend && legend.parentNode) legend.parentNode.removeChild(legend);
     };
-  }, [priceHistory, volatility, drift, userPrediction]);
+  }, [priceHistory, volatility, drift, userPrediction, stats, lookbackPeriod]);
 
   return (
     <div className="w-full max-w-6xl bg-background">
       {/* Token Pair Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="text-3xl font-bold">{tokenPair?.pairName ?? 'TOKEN0/TOKEN1'}</div>
-          {tokenPair?.feeTier && (
-            <div className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">
-              {(parseInt(tokenPair.feeTier) / 10000).toFixed(2)}%
-            </div>
-          )}
-          
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl font-bold">{tokenPair?.pairName ?? 'TOKEN0/TOKEN1'}</div>
+            {tokenPair?.feeTier && (
+              <div className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">
+                {(parseInt(tokenPair.feeTier) / 10000).toFixed(2)}%
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Lookback Period:</span>
+            <Select value={lookbackPeriod} onValueChange={(value: LookbackPeriod) => setLookbackPeriod(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3 months">3 months</SelectItem>
+                <SelectItem value="2 months">2 months</SelectItem>
+                <SelectItem value="1 month">1 month</SelectItem>
+                <SelectItem value="2 weeks">2 weeks</SelectItem>
+                <SelectItem value="1 week">1 week</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="text-sm text-muted-foreground">Powered by Uniswap v3 subgraph</div>
       </div>
