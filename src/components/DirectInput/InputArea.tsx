@@ -39,8 +39,8 @@ const InputArea = () => {
     <div className="w-full max-w-4xl bg-card rounded-lg shadow p-6 flex flex-col gap-4 font-zen">
       {/* Title and Description */}
       <div className="mb-2">
-        <div className="text-lg font-semibold">Your Market Prediction</div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-lg font">Your Market Prediction</div>
+        <div className="text-sm text-muted-foreground">
           Share your view on future price movement by entering your expected trend (drift) and uncertainty (volatility).
         </div>
       </div>
@@ -50,16 +50,14 @@ const InputArea = () => {
           <div className="flex flex-col items-start gap-1 flex-1">
             <div className="flex items-center gap-1">
               <label htmlFor="volatility" className="text-xs font-medium text-muted-foreground">Volatility</label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <GoQuestion className="cursor-help text-muted-foreground text-xs" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <span>Annualized standard deviation of price returns. Higher values mean more uncertainty.</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <GoQuestion className="cursor-help text-muted-foreground text-xs" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Annualized standard deviation of price returns. Higher values mean more uncertainty.</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="relative w-full">
               <input
@@ -78,16 +76,14 @@ const InputArea = () => {
           <div className="flex flex-col items-start gap-1 flex-1">
             <div className="flex items-center gap-1">
               <label htmlFor="drift" className="text-xs font-medium text-muted-foreground">Drift</label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <GoQuestion className="cursor-help text-muted-foreground text-xs" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <span>Expected average return or trend direction over time.</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <GoQuestion className="cursor-help text-muted-foreground text-xs" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Expected average return or trend direction over time.</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="relative w-full">
               <input
@@ -106,16 +102,14 @@ const InputArea = () => {
           <div className="flex flex-col items-start gap-1 flex-1">
             <div className="flex items-center gap-1">
               <label htmlFor="timeHorizon" className="text-xs font-medium text-muted-foreground">Time Horizon</label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <GoQuestion className="cursor-help text-muted-foreground text-xs" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <span>Number of days into the future for your prediction.</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <GoQuestion className="cursor-help text-muted-foreground text-xs" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Number of days into the future for your prediction.</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="relative w-full">
               <input
