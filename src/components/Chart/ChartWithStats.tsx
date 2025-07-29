@@ -4,7 +4,7 @@ import { useUniswapPriceHistory } from '@/hooks/useUniswapPriceHistory';
 import { usePoolStats, LookbackPeriod } from '@/hooks/usePoolStats';
 import { parsePoolAddress } from '@/utils/poolUtils';
 import PoolMetrics from './PoolMetrics';
-import { createChart, AreaSeries, LineSeries } from 'lightweight-charts';
+import { createChart, AreaSeries, LineSeries, createSeriesMarkers } from 'lightweight-charts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Helper function to convert lookback period to days
@@ -25,6 +25,7 @@ const API_KEY = process.env.NEXT_PUBLIC_THEGRAPH_API_KEY ?? '';
 const ChartWithStats = () => {
   const { priceHistory, setPriceHistory, volatility, drift, userPrediction } = useChartState();
   const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('3 months');
+  const [prevLookbackPeriod, setPrevLookbackPeriod] = useState<LookbackPeriod>('3 months');
   const { data, loading, error } = useUniswapPriceHistory({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, limit: 24 * 90 });
   const { stats, poolData, loading: statsLoading } = usePoolStats({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, lookbackPeriod });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
@@ -53,7 +54,12 @@ const ChartWithStats = () => {
       height: 320,
       layout: { background: { color: 'transparent' }, textColor: '#888' },
       grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } },
-      timeScale: { timeVisible: true, secondsVisible: true },
+      timeScale: { 
+        timeVisible: true, 
+        secondsVisible: true,
+        rightOffset: 12,
+        barSpacing: 3,
+      },
       rightPriceScale: { borderColor: '#ccc' },
     });
     const mappedData = priceHistory
@@ -109,7 +115,7 @@ const ChartWithStats = () => {
         title: `Low (${lookbackPeriod})`
       });
 
-      // Highlight the selected period by setting visible range
+      // Add start date marker
       if (dedupedData.length > 0) {
         const daysToLookback = getDaysFromLookbackPeriod(lookbackPeriod);
         const endIndex = dedupedData.length - 1;
@@ -117,13 +123,35 @@ const ChartWithStats = () => {
         
         if (startIndex < endIndex) {
           const startTime = dedupedData[startIndex].time;
+          const startPrice = dedupedData[startIndex].value;
           const endTime = dedupedData[endIndex].time;
           
-          // Set visible range to focus on the selected period
-          chart.timeScale().setVisibleRange({
-            from: startTime,
-            to: endTime
-          });
+          // Add start date marker using series markers
+          const startMarker = [{
+            time: startTime,
+            position: 'aboveBar' as const,
+            color: '#F59E0B',
+            shape: 'circle' as const,
+            text: `Start (${lookbackPeriod})`,
+            price: startPrice,
+            size: 1, // Make it a smaller dot
+          }];
+          
+          createSeriesMarkers(areaSeries, startMarker);
+
+          // Animate zoom to the selected period with smooth transition
+          setTimeout(() => {
+            // First fit content to show all data briefly
+            chart.timeScale().fitContent();
+            
+            // Then animate to the selected period
+            setTimeout(() => {
+              chart.timeScale().setVisibleRange({
+                from: startTime,
+                to: endTime
+              });
+            }, 300); // Smooth transition delay
+          }, 100); // Initial delay to ensure chart is ready
         }
       }
     }
@@ -167,10 +195,15 @@ const ChartWithStats = () => {
       legend.innerHTML = `<div style=\"font-size:20px;margin:2px 0;\">${price}</div><div style=\"font-size:13px;color:#666;\">${date}</div>`;
       
       // Add lookback period info
-      if (stats.high > 0 && stats.low > 0) {
+      if (stats.high > 0 && stats.low > 0 && dedupedData.length > 0) {
+        const daysToLookback = getDaysFromLookbackPeriod(lookbackPeriod);
+        const endIndex = dedupedData.length - 1;
+        const startIndex = Math.max(0, endIndex - daysToLookback + 1);
+        
         legend.innerHTML += `<div style=\"font-size:13px;color:#059669;\">Period High: ${formatPrice(stats.high)}</div>`;
         legend.innerHTML += `<div style=\"font-size:13px;color:#dc2626;\">Period Low: ${formatPrice(stats.low)}</div>`;
-        legend.innerHTML += `<div style=\"font-size:13px;color:#666;\">${lookbackPeriod}</div>`;
+        legend.innerHTML += `<div style=\"font-size:13px;color:#F59E0B;\">Start: ${formatPrice(dedupedData[startIndex]?.value || 0)} (marked)</div>`;
+        legend.innerHTML += `<div style=\"font-size:13px;color:#666;\">${lookbackPeriod} (zoomed)</div>`;
       }
       
       if (userPrediction.min > 0 && userPrediction.max > 0) {
@@ -221,7 +254,10 @@ const ChartWithStats = () => {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Lookback Period:</span>
-            <Select value={lookbackPeriod} onValueChange={(value: LookbackPeriod) => setLookbackPeriod(value)}>
+            <Select value={lookbackPeriod} onValueChange={(value: LookbackPeriod) => {
+              setPrevLookbackPeriod(lookbackPeriod);
+              setLookbackPeriod(value);
+            }}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>

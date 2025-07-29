@@ -38,7 +38,7 @@ const InputArea = () => {
     <div className="w-full max-w-6xl bg-card rounded-lg shadow p-6 flex flex-col gap-4 font-zen">
       {/* Title and Description */}
       <div className="mb-2">
-        <div className="text-xl font-semibold">Your Market Prediction</div>
+        <div className="text-xl">Your Market Prediction</div>
         <div className="text-sm text-muted-foreground">
           Share your view on future price movement by entering your expected trend (drift) and uncertainty (volatility).
         </div>
