@@ -11,10 +11,10 @@ export default function Content() {
   return (
     <ChartStateProvider>
       <TooltipProvider>
-        <div className="flex flex-col min-h-screen bg-main font-zen">
+        <div className="flex flex-col min-h-screen bg-background font-zen">
           <Header ghost />
-          {/* Price Chart Section */}
-          <section className="flex flex-col items-center justify-center p-6 gap-6 flex-1">
+          {/* Main Content Section */}
+          <section className="flex flex-col items-center p-6 gap-6 flex-1">
             <ChartWithStats />
             <InputArea />
           </section>

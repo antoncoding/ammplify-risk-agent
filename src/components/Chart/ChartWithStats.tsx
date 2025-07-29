@@ -1,15 +1,29 @@
 import React, { useEffect } from 'react';
 import { useChartState } from '@/contexts/ChartStateContext';
 import { useUniswapPriceHistory } from '@/hooks/useUniswapPriceHistory';
-import { ColorType, createChart, AreaSeries, LineSeries } from 'lightweight-charts';
+import { usePoolStats } from '@/hooks/usePoolStats';
+import { parsePoolAddress } from '@/utils/poolUtils';
+import PoolMetrics from './PoolMetrics';
+import { createChart, AreaSeries, LineSeries } from 'lightweight-charts';
 
-const POOL_ADDRESS = '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640'; // ETH/USDC
-const API_KEY = process.env.NEXT_PUBLIC_THEGRAPH_API_KEY || '';
+const POOL_ADDRESS = '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640'; // ETH/USDC
+const API_KEY = process.env.NEXT_PUBLIC_THEGRAPH_API_KEY ?? '';
 
 const ChartWithStats = () => {
   const { priceHistory, setPriceHistory, volatility, drift, userPrediction } = useChartState();
   const { data, loading, error } = useUniswapPriceHistory({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, limit: 24 * 90 });
+  const { stats, poolData, loading: statsLoading } = usePoolStats({ poolAddress: POOL_ADDRESS, apiKey: API_KEY });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
+  
+  // Get token pair info from real data or fallback to parsing
+  const tokenPair = poolData ? {
+    token0: poolData.token0.id,
+    token1: poolData.token1.id,
+    symbol0: poolData.token0.symbol,
+    symbol1: poolData.token1.symbol,
+    pairName: `${poolData.token0.symbol}/${poolData.token1.symbol}`,
+    feeTier: poolData.feeTier
+  } : parsePoolAddress(POOL_ADDRESS);
 
   useEffect(() => {
     if (data.length) setPriceHistory(data);
@@ -129,20 +143,40 @@ const ChartWithStats = () => {
   }, [priceHistory, volatility, drift, userPrediction]);
 
   return (
-    <div className="w-full max-w-4xl bg-card rounded-lg shadow p-6 flex flex-col gap-4">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <div className="text-lg font-semibold">ETH/USDC</div>
-          <div className="text-xs text-muted-foreground">Powered by Uniswap v3 subgraph</div>
+    <div className="w-full max-w-6xl bg-background">
+      {/* Token Pair Header */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="text-3xl font-bold">{tokenPair?.pairName ?? 'TOKEN0/TOKEN1'}</div>
+          {tokenPair?.feeTier && (
+            <div className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">
+              {(parseInt(tokenPair.feeTier) / 10000).toFixed(2)}%
+            </div>
+          )}
+          
         </div>
-        <div className="flex flex-col gap-1 text-sm">
-          <div>Current Price: {priceHistory.length ? priceHistory[priceHistory.length-1].price.toFixed(2) : '--'}</div>
-          <div>Volatility: {volatility}</div>
-        </div>
+        <div className="text-sm text-muted-foreground">Powered by Uniswap v3 subgraph</div>
       </div>
-      <div ref={chartContainerRef} className="w-full h-80" />
-      {loading && <div className="text-center text-muted-foreground">Loading price data...</div>}
-      {error && <div className="text-center text-destructive">Error: {error}</div>}
+
+      {/* Pool Metrics */}
+      <PoolMetrics stats={stats} loading={statsLoading} />
+
+      {/* Chart Section */}
+      <div className="bg-card rounded-lg shadow p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
+          <div>
+            <div className="text-lg font-semibold">Price Chart</div>
+            <div className="text-xs text-muted-foreground">Historical price data</div>
+          </div>
+          <div className="flex flex-col gap-1 text-sm">
+            <div>Current Price: {priceHistory.length ? priceHistory[priceHistory.length-1].price.toFixed(2) : '--'}</div>
+            <div>Volatility: {volatility}</div>
+          </div>
+        </div>
+        <div ref={chartContainerRef} className="w-full h-80" />
+        {loading && <div className="text-center text-muted-foreground">Loading price data...</div>}
+        {error && <div className="text-center text-destructive">Error: {error}</div>}
+      </div>
     </div>
   );
 };
