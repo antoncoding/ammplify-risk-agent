@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { FaComments, FaBolt, FaExchangeAlt } from 'react-icons/fa';
 import { GoQuestion } from 'react-icons/go';
 import { useChartState } from '@/contexts/ChartStateContext';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip } from '@/components/ui/tooltip';
 import PredictionResult from './PredictionResult';
 
 const InputArea = () => {
@@ -50,13 +49,8 @@ const InputArea = () => {
           <div className="flex flex-col items-start gap-1 flex-1">
             <div className="flex items-center gap-1">
               <label htmlFor="volatility" className="text-xs font-medium text-muted-foreground">Volatility</label>
-              <Tooltip>
-                <TooltipTrigger>
-                  <GoQuestion className="cursor-help text-muted-foreground text-xs" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Annualized standard deviation of price returns. Higher values mean more uncertainty.</p>
-                </TooltipContent>
+              <Tooltip content="Annualized standard deviation of price returns. Higher values mean more uncertainty.">
+                <GoQuestion className="text-muted-foreground text-xs" />
               </Tooltip>
             </div>
             <div className="relative w-full">
@@ -76,13 +70,8 @@ const InputArea = () => {
           <div className="flex flex-col items-start gap-1 flex-1">
             <div className="flex items-center gap-1">
               <label htmlFor="drift" className="text-xs font-medium text-muted-foreground">Drift</label>
-              <Tooltip>
-                <TooltipTrigger>
-                  <GoQuestion className="cursor-help text-muted-foreground text-xs" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Expected average return or trend direction over time.</p>
-                </TooltipContent>
+              <Tooltip content="Expected average return or trend direction over time.">
+                <GoQuestion className="text-muted-foreground text-xs" />
               </Tooltip>
             </div>
             <div className="relative w-full">
@@ -102,13 +91,8 @@ const InputArea = () => {
           <div className="flex flex-col items-start gap-1 flex-1">
             <div className="flex items-center gap-1">
               <label htmlFor="timeHorizon" className="text-xs font-medium text-muted-foreground">Time Horizon</label>
-              <Tooltip>
-                <TooltipTrigger>
-                  <GoQuestion className="cursor-help text-muted-foreground text-xs" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Number of days into the future for your prediction.</p>
-                </TooltipContent>
+              <Tooltip content="Number of days into the future for your prediction.">
+                <GoQuestion className="text-muted-foreground text-xs" />
               </Tooltip>
             </div>
             <div className="relative w-full">

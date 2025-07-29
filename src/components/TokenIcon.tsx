@@ -1,13 +1,7 @@
 import React, { useMemo } from 'react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { useTokens } from '@/components/providers/TokenProvider';
-import { TooltipContent as CustomTooltipContent } from './TooltipContent';
 type TokenIconProps = {
   address: string;
   chainId: number;
@@ -39,23 +33,24 @@ export function TokenIcon({ address, chainId, width, height, opacity }: TokenIco
       : `This token is verified`;
 
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Image
-              className="rounded-full"
-              src={token.img}
-              alt={token.symbol}
-              width={width}
-              height={height}
-              style={{ opacity }}
-            />
-          </TooltipTrigger>
-          <TooltipContent>
-            <CustomTooltipContent title={token.symbol} detail={detail} icon={img} />
-          </TooltipContent>
+        <Tooltip 
+          content={
+            <div className="flex flex-col gap-1">
+              <div className="font-bold">{token.symbol}</div>
+              <div className="text-sm">{detail}</div>
+            </div>
+          }
+          icon={img}
+        >
+          <Image
+            className="rounded-full"
+            src={token.img}
+            alt={token.symbol}
+            width={width}
+            height={height}
+            style={{ opacity }}
+          />
         </Tooltip>
-      </TooltipProvider>
     );
   }
 

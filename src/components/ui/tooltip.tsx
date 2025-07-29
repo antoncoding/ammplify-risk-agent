@@ -1,30 +1,101 @@
-import * as React from "react"
-import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+import React, { ReactNode, useRef, useEffect, useState } from 'react';
+import { GoQuestion } from 'react-icons/go';
 
-import { cn } from "@/lib/utils"
+type TooltipProps = {
+  children: ReactNode;
+  content: ReactNode;
+  icon?: ReactNode;
+  className?: string;
+};
 
-const TooltipProvider = TooltipPrimitive.Provider
+type TooltipTriggerProps = {
+  children: ReactNode;
+  asChild?: boolean;
+};
 
-const Tooltip = TooltipPrimitive.Root
+type TooltipContentProps = {
+  children: ReactNode;
+  className?: string;
+};
 
-const TooltipTrigger = TooltipPrimitive.Trigger
+// Custom tooltip component using CSS hover states with smart positioning
+const Tooltip: React.FC<TooltipProps> = ({ children, content, icon, className = '' }) => {
+  const defaultIcon = <GoQuestion className="h-4 w-4" />;
+  const tooltipIcon = icon || defaultIcon;
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<'top' | 'bottom'>('top');
 
-const TooltipContent = React.forwardRef<
-  React.ElementRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
-  <TooltipPrimitive.Portal>
-    <TooltipPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        "z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-tooltip-content-transform-origin]",
-        className
-      )}
-      {...props}
-    />
-  </TooltipPrimitive.Portal>
-))
-TooltipContent.displayName = TooltipPrimitive.Content.displayName
+  useEffect(() => {
+    const updatePosition = () => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const elementTop = rect.top;
+        const elementBottom = rect.bottom;
+        
+        // If element is in the top half of the viewport, show tooltip below
+        // If element is in the bottom half, show tooltip above
+        if (elementTop < viewportHeight / 2) {
+          setPosition('bottom');
+        } else {
+          setPosition('top');
+        }
+      }
+    };
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition);
+    };
+  }, []);
+
+  return (
+    <div ref={triggerRef} className={`relative group ${className}`}>
+      {children}
+      <div className={`absolute left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 ${
+        position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+      }`}>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 min-w-[300px] max-w-md">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 text-gray-600 dark:text-gray-400">
+              {tooltipIcon}
+            </div>
+            <div className="text-sm text-gray-700 dark:text-gray-300">
+              {content}
+            </div>
+          </div>
+          {/* Arrow pointing in the correct direction */}
+          <div className={`absolute left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-transparent ${
+            position === 'top' 
+              ? 'top-full border-t-4 border-t-white dark:border-t-gray-800' 
+              : 'bottom-full border-b-4 border-b-white dark:border-b-gray-800'
+          }`}></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// TooltipTrigger is just a wrapper for the trigger element
+const TooltipTrigger: React.FC<TooltipTriggerProps> = ({ children, asChild }) => {
+  if (asChild) {
+    return <>{children}</>;
+  }
+  return <span>{children}</span>;
+};
+
+// TooltipContent is just a wrapper for the content
+const TooltipContent: React.FC<TooltipContentProps> = ({ children, className = '' }) => {
+  return <div className={className}>{children}</div>;
+};
+
+// TooltipProvider is no longer needed but kept for compatibility
+const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  return <>{children}</>;
+};
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
