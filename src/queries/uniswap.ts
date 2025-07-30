@@ -1,4 +1,4 @@
-export function poolHourDataQuery(poolAddress: string, first: number = 168, skip: number = 0) {
+export function poolHourDataQuery(poolAddress: string, first = 168, skip = 0) {
   return `{
     poolHourDatas(
       where: { pool: \"${poolAddress.toLowerCase()}\" },

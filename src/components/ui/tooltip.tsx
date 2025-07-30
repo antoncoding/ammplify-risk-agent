@@ -19,9 +19,9 @@ type TooltipContentProps = {
 };
 
 // Custom tooltip component using CSS hover states with smart positioning
-const Tooltip: React.FC<TooltipProps> = ({ children, content, icon, className = '' }) => {
+function Tooltip({ children, content, icon, className = '' }: TooltipProps) {
   const defaultIcon = <GoQuestion className="h-4 w-4" />;
-  const tooltipIcon = icon || defaultIcon;
+  const tooltipIcon = icon ?? defaultIcon;
   const triggerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<'top' | 'bottom'>('top');
 
@@ -31,7 +31,6 @@ const Tooltip: React.FC<TooltipProps> = ({ children, content, icon, className = 
         const rect = triggerRef.current.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
         const elementTop = rect.top;
-        const elementBottom = rect.bottom;
         
         // If element is in the top half of the viewport, show tooltip below
         // If element is in the bottom half, show tooltip above
@@ -78,24 +77,24 @@ const Tooltip: React.FC<TooltipProps> = ({ children, content, icon, className = 
       </div>
     </div>
   );
-};
+}
 
 // TooltipTrigger is just a wrapper for the trigger element
-const TooltipTrigger: React.FC<TooltipTriggerProps> = ({ children, asChild }) => {
+function TooltipTrigger({ children, asChild }: TooltipTriggerProps) {
   if (asChild) {
     return <>{children}</>;
   }
   return <span>{children}</span>;
-};
+}
 
 // TooltipContent is just a wrapper for the content
-const TooltipContent: React.FC<TooltipContentProps> = ({ children, className = '' }) => {
+function TooltipContent({ children, className = '' }: TooltipContentProps) {
   return <div className={className}>{children}</div>;
-};
+}
 
 // TooltipProvider is no longer needed but kept for compatibility
-const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+function TooltipProvider({ children }: { children: ReactNode }) {
   return <>{children}</>;
-};
+}
 
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };

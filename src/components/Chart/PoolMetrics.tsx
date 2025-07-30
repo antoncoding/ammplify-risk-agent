@@ -12,7 +12,7 @@ type PoolMetricsProps = {
   loading: boolean;
 };
 
-const PoolMetrics: React.FC<PoolMetricsProps> = ({ stats, loading }) => {
+function PoolMetrics({ stats, loading }: PoolMetricsProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

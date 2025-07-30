@@ -59,6 +59,37 @@ const getDaysFromLookbackPeriod = (period: LookbackPeriod): number => {
   }
 };
 
+type PoolDayData = {
+  volumeUSD: string;
+  volumeToken0: string;
+  volumeToken1: string;
+  date: number;
+  feesUSD: string;
+  high: string;
+  low: string;
+  open: string;
+  close: string;
+};
+
+type GraphQLResponse = {
+  data?: {
+    pool?: {
+      id: string;
+      feeTier: string;
+      token0: {
+        id: string;
+        symbol: string;
+      };
+      token1: {
+        id: string;
+        symbol: string;
+      };
+      poolDayData: PoolDayData[];
+    };
+  };
+  errors?: { message: string }[];
+};
+
 export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' }: UsePoolStatsOptions) {
   const [stats, setStats] = useState<PoolStats>({
     volume: 0,
@@ -96,7 +127,7 @@ export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' 
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const json = await response.json();
+        const json = await response.json() as GraphQLResponse;
         
         if (json.errors) {
           throw new Error(json.errors[0]?.message ?? 'GraphQL error');
@@ -117,11 +148,11 @@ export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' 
         
         if (filteredData.length > 0) {
           // Aggregate volume and fees
-          const volume = filteredData.reduce((sum: number, day: any) => sum + parseFloat(day.volumeUSD), 0);
-          const fees = filteredData.reduce((sum: number, day: any) => sum + parseFloat(day.feesUSD), 0);
+          const volume = filteredData.reduce((sum: number, day: PoolDayData) => sum + parseFloat(day.volumeUSD), 0);
+          const fees = filteredData.reduce((sum: number, day: PoolDayData) => sum + parseFloat(day.feesUSD), 0);
           
           // Calculate high/low prices
-          const prices = filteredData.flatMap((day: any) => [
+          const prices = filteredData.flatMap((day: PoolDayData) => [
             parseFloat(day.high),
             parseFloat(day.low),
             parseFloat(day.open),
@@ -132,13 +163,13 @@ export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' 
           const low = Math.min(...prices);
           
           // Calculate growth (percentage change from start to end)
-          const startPrice = parseFloat(filteredData[filteredData.length - 1]?.close || '0');
-          const endPrice = parseFloat(filteredData[0]?.close || '0');
+          const startPrice = parseFloat(filteredData[filteredData.length - 1]?.close ?? '0');
+          const endPrice = parseFloat(filteredData[0]?.close ?? '0');
           const growth = startPrice > 0 ? ((endPrice - startPrice) / startPrice) * 100 : 0;
           
           // Calculate volatility (standard deviation of daily returns)
           const dailyReturns = filteredData
-            .map((day: any) => parseFloat(day.close))
+            .map((day: PoolDayData) => parseFloat(day.close))
             .filter((price: number) => !isNaN(price) && price > 0)
             .map((price: number, index: number, prices: number[]) => {
               if (index === 0) return 0;

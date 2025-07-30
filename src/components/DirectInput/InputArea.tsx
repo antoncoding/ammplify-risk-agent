@@ -4,7 +4,7 @@ import { useChartState } from '@/contexts/ChartStateContext';
 import { Tooltip } from '@/components/ui/tooltip';
 import PredictionResult from './PredictionResult';
 
-const InputArea = () => {
+function InputArea() {
   const {
     volatility,
     drift,

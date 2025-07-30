@@ -1,7 +1,7 @@
 import React from 'react';
 import { useChartState } from '@/contexts/ChartStateContext';
 
-const VolDriftInput = () => {
+function VolDriftInput() {
   const { volatility, drift, setVolatility, setDrift } = useChartState();
 
   return (
@@ -26,6 +26,6 @@ const VolDriftInput = () => {
       </label>
     </div>
   );
-};
+}
 
 export default VolDriftInput; 

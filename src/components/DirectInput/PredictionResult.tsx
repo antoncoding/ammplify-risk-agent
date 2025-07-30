@@ -1,13 +1,13 @@
 import React from 'react';
 
-interface PredictionResultProps {
+type PredictionResultProps = {
   drift: number;
   vol: number;
   time: number;
   currentPrice: number;
-}
+};
 
-const PredictionResult: React.FC<PredictionResultProps> = ({ drift, vol, time, currentPrice }) => {
+function PredictionResult({ drift, vol, time, currentPrice }: PredictionResultProps) {
   const valid = currentPrice > 0 && !isNaN(drift) && !isNaN(vol) && !isNaN(time) && time > 0;
   const min = valid ? currentPrice * (1 + drift - vol) : null;
   const max = valid ? currentPrice * (1 + drift + vol) : null;
@@ -19,6 +19,6 @@ const PredictionResult: React.FC<PredictionResultProps> = ({ drift, vol, time, c
       </div>
     </div>
   );
-};
+}
 
 export default PredictionResult; 

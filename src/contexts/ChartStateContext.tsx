@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import type { PricePoint } from '@/hooks/useUniswapPriceHistory';
 
 // Types for chart state
@@ -26,7 +26,7 @@ export type ChartState = {
 
 const ChartStateContext = createContext<ChartState | undefined>(undefined);
 
-export const ChartStateProvider = ({ children }: { children: React.ReactNode }) => {
+export function ChartStateProvider({ children }: { children: React.ReactNode }) {
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [userPrediction, setUserPrediction] = useState<UserPrediction>({ min: 0, max: 0, timeHorizon: 30 });

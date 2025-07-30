@@ -1,17 +1,29 @@
 import { useEffect, useState } from 'react';
 import { poolHourDataQuery } from '@/queries/uniswap';
 
-export interface PricePoint {
+export type PricePoint = {
   timestamp: number;
   price: number;
-}
+};
 
-interface UseUniswapPriceHistoryOptions {
+type UseUniswapPriceHistoryOptions = {
   poolAddress: string;
   apiKey: string;
   subgraphId?: string; // default to the provided one
   limit?: number;
-}
+};
+
+type PoolHourData = {
+  periodStartUnix: string;
+  token0Price: string;
+};
+
+type GraphQLResponse = {
+  data?: {
+    poolHourDatas?: PoolHourData[];
+  };
+  errors?: { message: string }[];
+};
 
 const DEFAULT_SUBGRAPH_ID = '5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV';
 const BATCH_SIZE = 1000;
@@ -41,15 +53,15 @@ export function useUniswapPriceHistory({ poolAddress, apiKey, subgraphId = DEFAU
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query })
           });
-          const json = await res.json();
-          const points = (json.data?.poolHourDatas || []).map((d: any) => ({
+          const json = await res.json() as GraphQLResponse;
+          const points = (json.data?.poolHourDatas ?? []).map((d: PoolHourData) => ({
             timestamp: Number(d.periodStartUnix),
             price: Number(d.token0Price),
           }));
           allPoints = allPoints.concat(points);
           if (points.length < first) break; // No more data
-        } catch (err: any) {
-          if (!cancelled) setError(err.message || 'Unknown error');
+        } catch (err: unknown) {
+          if (!cancelled) setError(err instanceof Error ? err.message : 'Unknown error');
           setLoading(false);
           return;
         }
@@ -64,7 +76,8 @@ export function useUniswapPriceHistory({ poolAddress, apiKey, subgraphId = DEFAU
         setLoading(false);
       }
     }
-    fetchAllBatches();
+    
+    void fetchAllBatches();
     return () => { cancelled = true; };
   }, [poolAddress, apiKey, subgraphId, limit]);
 

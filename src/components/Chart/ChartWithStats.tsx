@@ -22,10 +22,9 @@ const getDaysFromLookbackPeriod = (period: LookbackPeriod): number => {
 const POOL_ADDRESS = '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640'; // ETH/USDC
 const API_KEY = process.env.NEXT_PUBLIC_THEGRAPH_API_KEY ?? '';
 
-const ChartWithStats = () => {
+function ChartWithStats() {
   const { priceHistory, setPriceHistory, volatility, drift, userPrediction } = useChartState();
   const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('3 months');
-  const [prevLookbackPeriod, setPrevLookbackPeriod] = useState<LookbackPeriod>('3 months');
   const { data, loading, error } = useUniswapPriceHistory({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, limit: 24 * 90 });
   const { stats, poolData, loading: statsLoading } = usePoolStats({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, lookbackPeriod });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
@@ -202,7 +201,7 @@ const ChartWithStats = () => {
         
         legend.innerHTML += `<div style=\"font-size:13px;color:#059669;\">Period High: ${formatPrice(stats.high)}</div>`;
         legend.innerHTML += `<div style=\"font-size:13px;color:#dc2626;\">Period Low: ${formatPrice(stats.low)}</div>`;
-        legend.innerHTML += `<div style=\"font-size:13px;color:#F59E0B;\">Start: ${formatPrice(dedupedData[startIndex]?.value || 0)} (marked)</div>`;
+        legend.innerHTML += `<div style=\"font-size:13px;color:#F59E0B;\">Start: ${formatPrice(dedupedData[startIndex]?.value ?? 0)} (marked)</div>`;
         legend.innerHTML += `<div style=\"font-size:13px;color:#666;\">${lookbackPeriod} (zoomed)</div>`;
       }
       
@@ -215,15 +214,16 @@ const ChartWithStats = () => {
     if (dedupedData.length > 0) {
       setLegendHtml(formatDate(dedupedData[dedupedData.length-1].originalTimestamp), formatPrice(dedupedData[dedupedData.length-1].value));
     }
-    const updateLegend = (param: any) => {
+    const updateLegend = (param: unknown) => {
       let price = '';
       let date = '';
-      if (param && param.time) {
-        const bar = param.seriesData.get(areaSeries);
+      if (param && typeof param === 'object' && 'time' in param && param.time) {
+        const typedParam = param as { time: unknown; seriesData?: Map<unknown, { value?: number; close?: number }> };
+        const bar = typedParam.seriesData?.get(areaSeries);
         if (bar) {
-          price = formatPrice(bar.value !== undefined ? bar.value : bar.close);
-          const found = dedupedData.find(d => d.time === param.time);
-          date = found ? formatDate(found.originalTimestamp) : param.time;
+          price = formatPrice(bar.value ?? bar.close ?? 0);
+          const found = dedupedData.find(d => d.time === String(typedParam.time));
+          date = found ? formatDate(found.originalTimestamp) : String(typedParam.time);
         }
       } else if (dedupedData.length > 0) {
         price = formatPrice(dedupedData[dedupedData.length-1].value);
@@ -235,7 +235,7 @@ const ChartWithStats = () => {
     chart.timeScale().fitContent();
     return () => {
       chart.remove();
-      if (legend && legend.parentNode) legend.parentNode.removeChild(legend);
+      if (legend?.parentNode) legend.parentNode.removeChild(legend);
     };
   }, [priceHistory, volatility, drift, userPrediction, stats, lookbackPeriod]);
 
@@ -255,7 +255,6 @@ const ChartWithStats = () => {
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Lookback Period:</span>
             <Select value={lookbackPeriod} onValueChange={(value: LookbackPeriod) => {
-              setPrevLookbackPeriod(lookbackPeriod);
               setLookbackPeriod(value);
             }}>
               <SelectTrigger className="w-32">

@@ -1,8 +1,8 @@
 import React from 'react';
 import { useChartState } from '@/contexts/ChartStateContext';
 
-const ChartStats = () => {
-  const { currentPrice, volatility, drift, userPrediction } = useChartState();
+function ChartStats() {
+  const { currentPrice, volatility } = useChartState();
 
   return (
     <div className="p-4 bg-muted rounded shadow mb-4">
@@ -10,6 +10,6 @@ const ChartStats = () => {
       <div>Volatility: {volatility}</div>
     </div>
   );
-};
+}
 
 export default ChartStats; 
