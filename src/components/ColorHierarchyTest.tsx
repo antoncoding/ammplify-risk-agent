@@ -8,7 +8,7 @@ export function ColorHierarchyTest() {
       
       {/* Background Hierarchy */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Background Color Hierarchy</h2>
+        <h2 className="text-xl">Background Color Hierarchy</h2>
         <div className="space-y-4">
           <div className="p-6 bg-background border border-border rounded-lg">
             <h3 className="text-lg font-medium mb-2">Background (bg-background)</h3>
@@ -34,7 +34,7 @@ export function ColorHierarchyTest() {
 
       {/* Component Examples */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Component Examples</h2>
+        <h2 className="text-xl">Component Examples</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-card rounded-lg border border-border">
             <h3 className="font-medium mb-2">Card Component</h3>
@@ -52,7 +52,7 @@ export function ColorHierarchyTest() {
 
       {/* Button Variants */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Button Variants</h2>
+        <h2 className="text-xl ">Button Variants</h2>
         <div className="flex flex-wrap gap-4">
           <Button variant="default">Default</Button>
           <Button variant="secondary">Secondary</Button>
@@ -64,7 +64,7 @@ export function ColorHierarchyTest() {
 
       {/* Text Colors */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Text Color Hierarchy</h2>
+        <h2 className="text-xl ">Text Color Hierarchy</h2>
         <div className="space-y-2">
           <p className="text-foreground">Foreground text - main text color</p>
           <p className="text-muted-foreground">Muted foreground - secondary text color</p>
@@ -75,7 +75,7 @@ export function ColorHierarchyTest() {
 
       {/* Border Examples */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Border Examples</h2>
+        <h2 className="text-xl ">Border Examples</h2>
         <div className="space-y-2">
           <div className="p-4 border border-border rounded">Border example</div>
           <div className="p-4 border-2 border-primary rounded">Primary border</div>

@@ -56,7 +56,7 @@ export default function PersistentChatFooter() {
   }, [isDragging]);
 
   const getGreeting = () => {
-    return "Ask anything";
+    return "Ammplify";
   };
 
   const handleSendMessage = async () => {

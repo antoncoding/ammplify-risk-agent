@@ -171,7 +171,7 @@ export function ActionBar() {
   return (
     <div className="bg-card border border-border rounded-lg p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Actions</h3>
+        <h3 className="text-lg">Actions</h3>
         
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">Secondary</Button>
@@ -189,7 +189,7 @@ export function DataTable() {
   return (
     <div className="bg-card border border-border rounded-lg">
       <div className="p-4 border-b border-border">
-        <h3 className="text-lg font-semibold">Data</h3>
+        <h3 className="text-lg">Data</h3>
       </div>
       <div className="p-4">
         <div className="space-y-2">

@@ -305,7 +305,7 @@ function ChartWithStats() {
       <div className="bg-card rounded-lg shadow p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
           <div>
-            <div className="text-lg font-semibold">Price Chart</div>
+            <div className="text-lg">Price Chart</div>
             <div className="text-xs text-muted-foreground">Historical price data</div>
           </div>
           <div className="flex flex-col gap-1 text-sm">
