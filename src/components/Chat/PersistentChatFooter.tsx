@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ChevronUp, ChevronDown, Bot } from 'lucide-react';
+import { Send, ChevronDown, Bot } from 'lucide-react';
 import { useChatContext } from '@/contexts/ChatContext';
 
-interface Message {
+type Message = {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
-}
+};
 
 export default function PersistentChatFooter() {
-  const { messages, setMessages, context, poolId, isVisible } = useChatContext();
+  const { messages, setMessages, context, poolAddress, isVisible, availableFunctions, executeFunction } = useChatContext();
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -73,32 +73,84 @@ export default function PersistentChatFooter() {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate API call - replace with actual chat implementation
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: `I understand you're asking about: "${inputValue}". ${
-          context === 'market-selection' 
-            ? 'Let me help you choose the right market for your analysis.' 
-            : `Let me analyze that for the ${poolId} market and provide you with insights.`
-        }`,
-        role: 'assistant',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1000);
+    // Enhanced chat logic with function detection and execution
+    await new Promise(resolve => {
+      setTimeout(async () => {
+        let responseContent = '';
+        
+        // Simple function detection - in a real implementation, this would be handled by an AI model
+        const input = inputValue.toLowerCase();
+        
+        if (input.includes('change') && (input.includes('period') || input.includes('lookback'))) {
+          try {
+            // Example: detect period change request
+            if (input.includes('1 week')) {
+              await executeFunction('changeLookbackPeriod', { period: '1 week' });
+              responseContent = 'Changed the lookback period to 1 week. The chart and data will update accordingly.';
+            } else if (input.includes('1 month')) {
+              await executeFunction('changeLookbackPeriod', { period: '1 month' });
+              responseContent = 'Changed the lookback period to 1 month. The chart and data will update accordingly.';
+            } else if (input.includes('3 months')) {
+              await executeFunction('changeLookbackPeriod', { period: '3 months' });
+              responseContent = 'Changed the lookback period to 3 months. The chart and data will update accordingly.';
+            } else {
+              responseContent = 'I can change the lookback period to: 1 week, 2 weeks, 1 month, 2 months, or 3 months. Please specify which period you\'d like.';
+            }
+          } catch (error) {
+            console.error('Function execution failed:', error);
+            responseContent = 'Sorry, I encountered an error while changing the lookback period.';
+          }
+        } else if (input.includes('refresh')) {
+          try {
+            await executeFunction('refreshData', {});
+            responseContent = 'Data refreshed! All charts and metrics have been updated with the latest information.';
+          } catch (error) {
+            console.error('Function execution failed:', error);
+            responseContent = 'Sorry, I encountered an error while refreshing the data.';
+          }
+        } else {
+          responseContent = `I understand you're asking about: "${inputValue}". ${
+            context === 'market-selection' 
+              ? 'Let me help you choose the right market for your analysis.' 
+              : `Let me analyze that for the ${poolAddress} market and provide you with insights.`
+          }
+          
+          Available functions: ${availableFunctions.map(f => f.name).join(', ')}`;
+        }
+
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: responseContent,
+          role: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        setIsLoading(false);
+        resolve(undefined);
+      }, 1000);
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      void handleSendMessage();
     }
   };
 
   const toggleCollapsed = () => {
     setIsCollapsed(!isCollapsed);
+  };
+
+  const handleToggleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleCollapsed();
+    }
+  };
+
+  const handleSendClick = () => {
+    void handleSendMessage();
   };
 
   if (!isVisible) {
@@ -110,6 +162,10 @@ export default function PersistentChatFooter() {
       <div 
         className="fixed bottom-0 right-0 left-0 z-50 bg-background/95 backdrop-blur-sm border-t transition-all duration-300 ease-in-out cursor-pointer hover:bg-muted/20"
         onClick={toggleCollapsed}
+        onKeyPress={handleToggleKeyPress}
+        tabIndex={0}
+        role="button"
+        aria-label="Expand chat"
       >
         <div className="w-full px-6 py-4">
           <div className="flex items-center justify-center">
@@ -224,7 +280,7 @@ export default function PersistentChatFooter() {
               }}
             />
             <button
-              onClick={handleSendMessage}
+              onClick={handleSendClick}
               disabled={!inputValue.trim() || isLoading}
               className="p-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
               style={{ height: '44px' }}

@@ -6,11 +6,11 @@ export const metadata: Metadata = {
   description: 'Analyze and predict price movements for specific trading pools.',
 };
 
-interface PageProps {
+type PageProps = {
   params: {
     poolId: string;
   };
-}
+};
 
 export default function Page({ params }: PageProps) {
   return <PoolContent poolId={params.poolId} />;

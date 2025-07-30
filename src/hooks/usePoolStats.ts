@@ -167,20 +167,31 @@ export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' 
           const endPrice = parseFloat(filteredData[0]?.close ?? '0');
           const growth = startPrice > 0 ? ((endPrice - startPrice) / startPrice) * 100 : 0;
           
-          // Calculate volatility (standard deviation of daily returns)
-          const dailyReturns = filteredData
-            .map((day: PoolDayData) => parseFloat(day.close))
-            .filter((price: number) => !isNaN(price) && price > 0)
-            .map((price: number, index: number, prices: number[]) => {
-              if (index === 0) return 0;
-              const prevPrice = prices[index - 1];
-              return prevPrice > 0 ? (price - prevPrice) / prevPrice : 0;
-            })
-            .filter((return_: number) => return_ !== 0);
+          // Calculate Parkinson volatility using high-low ranges
+          const validDays = filteredData.filter((day: PoolDayData) => {
+            const high = parseFloat(day.high);
+            const low = parseFloat(day.low);
+            return !isNaN(high) && !isNaN(low) && high > 0 && low > 0 && high > low;
+          });
           
-          const meanReturn = dailyReturns.reduce((sum: number, ret: number) => sum + ret, 0) / dailyReturns.length;
-          const variance = dailyReturns.reduce((sum: number, ret: number) => sum + Math.pow(ret - meanReturn, 2), 0) / dailyReturns.length;
-          const volatility = Math.sqrt(variance) * 100; // Convert to percentage
+          let volatility = 0;
+          if (validDays.length > 0) {
+            // Parkinson volatility formula: σ² = (1/(4n*ln(2))) * Σ(ln(H/L)²)
+            const logRangeSquared = validDays.map((day: PoolDayData) => {
+              const high = parseFloat(day.high);
+              const low = parseFloat(day.low);
+              const logRange = Math.log(high / low);
+              return logRange * logRange;
+            });
+            
+            const sumLogRangeSquared = logRangeSquared.reduce((sum: number, val: number) => sum + val, 0);
+            const n = validDays.length;
+            const variance = sumLogRangeSquared / (4 * n * Math.log(2));
+            volatility = Math.sqrt(variance) * 100; // Convert to percentage
+
+            // annualize volatility
+            volatility = volatility * Math.sqrt(365);
+          }
           
           // Format dates
           const startDate = new Date(filteredData[filteredData.length - 1]?.date * 1000).toLocaleDateString();

@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { useChartState } from '@/contexts/ChartStateContext';
+import { usePoolContext } from '@/contexts/PoolContext';
 import { useUniswapPriceHistory } from '@/hooks/useUniswapPriceHistory';
 import { usePoolStats, LookbackPeriod } from '@/hooks/usePoolStats';
+import { useChatFunctions } from '@/hooks/useChatFunctions';
 import { parsePoolAddress } from '@/utils/poolUtils';
 import PoolMetrics from './PoolMetrics';
 import { createChart, AreaSeries, LineSeries, createSeriesMarkers } from 'lightweight-charts';
@@ -19,17 +23,23 @@ const getDaysFromLookbackPeriod = (period: LookbackPeriod): number => {
   }
 };
 
-const POOL_ADDRESS = '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640'; // ETH/USDC
 const API_KEY = process.env.NEXT_PUBLIC_THEGRAPH_API_KEY ?? '';
 
 function ChartWithStats() {
+  const router = useRouter();
+  const params = useParams();
   const { priceHistory, setPriceHistory, volatility, drift, userPrediction } = useChartState();
-  const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('3 months');
-  const { data, loading, error } = useUniswapPriceHistory({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, limit: 24 * 90 });
-  const { stats, poolData, loading: statsLoading } = usePoolStats({ poolAddress: POOL_ADDRESS, apiKey: API_KEY, lookbackPeriod });
+  const { poolAddress, poolConfig, lookbackPeriod, setLookbackPeriod } = usePoolContext();
+  
+  // Register chat control functions
+  useChatFunctions();
+  
+  const isPoolPage = !!poolAddress;
+  const { data, loading, error } = useUniswapPriceHistory({ poolAddress, apiKey: API_KEY, limit: 24 * 90 });
+  const { stats, poolData, loading: statsLoading } = usePoolStats({ poolAddress, apiKey: API_KEY, lookbackPeriod });
   const chartContainerRef = React.useRef<HTMLDivElement>(null);
   
-  // Get token pair info from real data or fallback to parsing
+  // Get token pair info from pool config, real data, or fallback to parsing
   const tokenPair = poolData ? {
     token0: poolData.token0.id,
     token1: poolData.token1.id,
@@ -37,7 +47,14 @@ function ChartWithStats() {
     symbol1: poolData.token1.symbol,
     pairName: `${poolData.token0.symbol}/${poolData.token1.symbol}`,
     feeTier: poolData.feeTier
-  } : parsePoolAddress(POOL_ADDRESS);
+  } : poolConfig ? {
+    token0: '',
+    token1: '',
+    symbol0: poolConfig.pair.split('-')[0],
+    symbol1: poolConfig.pair.split('-')[1],
+    pairName: poolConfig.name,
+    feeTier: poolConfig.feeTier
+  } : parsePoolAddress(poolAddress);
 
   useEffect(() => {
     if (data.length) setPriceHistory(data);
@@ -245,6 +262,15 @@ function ChartWithStats() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
+            {isPoolPage && (
+              <button
+                onClick={() => router.push('/chat')}
+                className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-primary transition-colors rounded-md hover:bg-muted/50"
+                title="Back to markets"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
             <div className="text-3xl font-bold">{tokenPair?.pairName ?? 'TOKEN0/TOKEN1'}</div>
             {tokenPair?.feeTier && (
               <div className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">

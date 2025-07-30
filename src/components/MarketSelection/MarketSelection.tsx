@@ -7,52 +7,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-interface Market {
-  id: string;
-  name: string;
-  pair: string;
-  description: string;
-}
-
-const MARKETS: Market[] = [
-  {
-    id: 'eth-usdc',
-    name: 'ETH/USDC',
-    pair: 'ETH-USDC',
-    description: 'Ethereum vs USD Coin trading pair'
-  },
-  {
-    id: 'btc-usdc',
-    name: 'BTC/USDC', 
-    pair: 'BTC-USDC',
-    description: 'Bitcoin vs USD Coin trading pair'
-  },
-  {
-    id: 'sol-usdc',
-    name: 'SOL/USDC',
-    pair: 'SOL-USDC', 
-    description: 'Solana vs USD Coin trading pair'
-  }
-];
+import { getAllPools, PoolConfig } from '@/config/pools';
 
 export default function MarketSelection() {
   const router = useRouter();
   const [selectedMarket, setSelectedMarket] = useState<string>('');
   const [isLoading, setIsLoading] = useState<string>('');
+  
+  const markets = getAllPools();
 
-  const handleMarketSelect = (marketId: string) => {
-    setSelectedMarket(marketId);
-    setIsLoading(marketId);
+  const handleMarketSelect = (poolAddress: string) => {
+    setSelectedMarket(poolAddress);
+    setIsLoading(poolAddress);
     
     // Simulate loading and then navigate
     setTimeout(() => {
-      router.push(`/chat/${marketId}`);
+      router.push(`/chat/${poolAddress}`);
     }, 800);
   };
 
   if (isLoading) {
-    const loadingMarket = MARKETS.find(m => m.id === isLoading);
+    const loadingMarket = markets.find(m => m.address === isLoading);
     return (
       <div className="w-full max-w-md mx-auto">
         <div className="bg-card rounded-lg shadow p-8 text-center">
@@ -79,8 +54,8 @@ export default function MarketSelection() {
             <SelectValue placeholder="Select a market to analyze" />
           </SelectTrigger>
           <SelectContent>
-            {MARKETS.map((market) => (
-              <SelectItem key={market.id} value={market.id}>
+            {markets.map((market) => (
+              <SelectItem key={market.address} value={market.address}>
                 <div className="flex flex-col">
                   <span className="font-medium">{market.name}</span>
                   <span className="text-xs text-muted-foreground">{market.description}</span>

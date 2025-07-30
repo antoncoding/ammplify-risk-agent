@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import type { PricePoint } from '@/hooks/useUniswapPriceHistory';
 
 // Types for chart state
@@ -34,7 +34,7 @@ export function ChartStateProvider({ children }: { children: React.ReactNode }) 
   const [drift, setDrift] = useState<number>(0);
 
   // Helper: convert drift/vol -> min/max prediction (1 stddev range, geometric Brownian motion)
-  const setPredictionFromDriftVol = (drift: number, vol: number, timeHorizon: number) => {
+  const setPredictionFromDriftVol = useCallback((drift: number, vol: number, timeHorizon: number) => {
     if (!currentPrice || timeHorizon <= 0) return;
     const t = timeHorizon / 365;
     // 1 stddev up/down from expected value
@@ -45,10 +45,10 @@ export function ChartStateProvider({ children }: { children: React.ReactNode }) 
     setUserPrediction({ min, max, timeHorizon });
     setVolatility(vol);
     setDrift(drift);
-  };
+  }, [currentPrice]);
 
   // Helper: convert min/max prediction -> drift/vol (assume symmetric, solve for drift/vol)
-  const setDriftVolFromPrediction = (min: number, max: number, timeHorizon: number) => {
+  const setDriftVolFromPrediction = useCallback((min: number, max: number, timeHorizon: number) => {
     if (!currentPrice || timeHorizon <= 0 || min <= 0 || max <= 0) return;
     const t = timeHorizon / 365;
     // Estimate expected = sqrt(min*max), stddev = (ln(max/min))/2
@@ -59,30 +59,31 @@ export function ChartStateProvider({ children }: { children: React.ReactNode }) 
     setUserPrediction({ min, max, timeHorizon });
     setVolatility(vol);
     setDrift(drift);
-  };
+  }, [currentPrice]);
 
-  const setTimeHorizon = (days: number) => {
+  const setTimeHorizon = useCallback((days: number) => {
     setUserPrediction(pred => ({ ...pred, timeHorizon: days }));
-  };
+  }, []);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    priceHistory,
+    currentPrice,
+    userPrediction,
+    volatility,
+    drift,
+    setPriceHistory,
+    setCurrentPrice,
+    setUserPrediction,
+    setVolatility,
+    setDrift,
+    setTimeHorizon,
+    setPredictionFromDriftVol,
+    setDriftVolFromPrediction,
+  }), [priceHistory, currentPrice, userPrediction, volatility, drift, setPriceHistory, setCurrentPrice, setUserPrediction, setVolatility, setDrift, setTimeHorizon, setPredictionFromDriftVol, setDriftVolFromPrediction]);
 
   return (
-    <ChartStateContext.Provider
-      value={{
-        priceHistory,
-        currentPrice,
-        userPrediction,
-        volatility,
-        drift,
-        setPriceHistory,
-        setCurrentPrice,
-        setUserPrediction,
-        setVolatility,
-        setDrift,
-        setTimeHorizon,
-        setPredictionFromDriftVol,
-        setDriftVolFromPrediction,
-      }}
-    >
+    <ChartStateContext.Provider value={contextValue}>
       {children}
     </ChartStateContext.Provider>
   );

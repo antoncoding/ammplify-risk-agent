@@ -1,0 +1,32 @@
+# Cursor Rules - TypeScript/ESLint Best Practices
+
+## Type Definitions
+- Use `type` instead of `interface` for all type definitions
+- Prefer `type Foo = { ... }` over `interface Foo { ... }`
+
+## Unused Variables/Imports
+- Remove unused imports immediately
+- Remove unused variables and functions
+- Use ESLint auto-fix: `--fix` flag
+
+## Promise Handling
+- Always await promises or use `.catch()`, `.then()`, or `void` operator
+- For event handlers that call async functions, create separate wrapper functions
+- Example: `onClick={() => void handleAsyncFunction()}`
+
+## Accessibility
+- Add keyboard listeners (`onKeyPress`) to clickable non-interactive elements
+- Include `tabIndex`, `role`, and `aria-label` for custom interactive elements
+- Ensure all clickable elements are keyboard accessible
+
+## Code Quality
+- Fix typos immediately (use spell check)
+- Keep functions focused and remove dead code
+- Use proper TypeScript types throughout
+
+## Quick Fixes
+- `interface` → `type`
+- `onClick={asyncFunc}` → `onClick={() => void asyncFunc()}`
+- Add `void` to async calls in event handlers
+- Remove unused imports/variables
+- Add keyboard listeners to clickable divs 

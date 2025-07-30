@@ -17,7 +17,7 @@ export default function HomePage() {
                 <span className="text-primary">Ammplify Risk Agent</span>
               </div>
               <div className="flex items-center justify-center text-2xl">
-                <span>Understading AMM Liquidity Management</span>
+                <span>Understanding AMM Liquidity Management</span>
               </div>
             </h2>
           </div>

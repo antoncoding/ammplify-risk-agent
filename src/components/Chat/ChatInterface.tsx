@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 
-interface Message {
+type Message = {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
-}
+};
 
-interface ChatInterfaceProps {
+type ChatInterfaceProps = {
   context?: 'market-selection' | 'pool-analysis';
   poolId?: string;
-}
+};
 
 export default function ChatInterface({ context = 'market-selection', poolId }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
@@ -42,23 +42,30 @@ export default function ChatInterface({ context = 'market-selection', poolId }: 
     setIsLoading(true);
 
     // Simulate API call - replace with actual chat implementation
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: `I understand you're asking about: "${inputValue}". ${context === 'market-selection' ? 'Let me help you choose the right market.' : `Let me analyze that for the ${poolId} market.`}`,
-        role: 'assistant',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1000);
+    await new Promise(resolve => {
+      setTimeout(() => {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: `I understand you're asking about: "${inputValue}". ${context === 'market-selection' ? 'Let me help you choose the right market.' : `Let me analyze that for the ${poolId} market.`}`,
+          role: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        setIsLoading(false);
+        resolve(undefined);
+      }, 1000);
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      void handleSendMessage();
     }
+  };
+
+  const handleSendClick = () => {
+    void handleSendMessage();
   };
 
   return (
@@ -108,7 +115,7 @@ export default function ChatInterface({ context = 'market-selection', poolId }: 
             disabled={isLoading}
           />
           <button
-            onClick={handleSendMessage}
+            onClick={handleSendClick}
             disabled={!inputValue.trim() || isLoading}
             className="p-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
           >
