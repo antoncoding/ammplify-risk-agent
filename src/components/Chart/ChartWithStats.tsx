@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useChartState } from '@/contexts/ChartStateContext';
 import { usePoolContext } from '@/contexts/PoolContext';
@@ -27,7 +27,6 @@ const API_KEY = process.env.NEXT_PUBLIC_THEGRAPH_API_KEY ?? '';
 
 function ChartWithStats() {
   const router = useRouter();
-  const params = useParams();
   const { priceHistory, setPriceHistory, volatility, drift, userPrediction } = useChartState();
   const { poolAddress, poolConfig, lookbackPeriod, setLookbackPeriod } = usePoolContext();
   

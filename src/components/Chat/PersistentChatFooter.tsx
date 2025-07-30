@@ -75,58 +75,60 @@ export default function PersistentChatFooter() {
 
     // Enhanced chat logic with function detection and execution
     await new Promise(resolve => {
-      setTimeout(async () => {
-        let responseContent = '';
-        
-        // Simple function detection - in a real implementation, this would be handled by an AI model
-        const input = inputValue.toLowerCase();
-        
-        if (input.includes('change') && (input.includes('period') || input.includes('lookback'))) {
-          try {
-            // Example: detect period change request
-            if (input.includes('1 week')) {
-              await executeFunction('changeLookbackPeriod', { period: '1 week' });
-              responseContent = 'Changed the lookback period to 1 week. The chart and data will update accordingly.';
-            } else if (input.includes('1 month')) {
-              await executeFunction('changeLookbackPeriod', { period: '1 month' });
-              responseContent = 'Changed the lookback period to 1 month. The chart and data will update accordingly.';
-            } else if (input.includes('3 months')) {
-              await executeFunction('changeLookbackPeriod', { period: '3 months' });
-              responseContent = 'Changed the lookback period to 3 months. The chart and data will update accordingly.';
-            } else {
-              responseContent = 'I can change the lookback period to: 1 week, 2 weeks, 1 month, 2 months, or 3 months. Please specify which period you\'d like.';
-            }
-          } catch (error) {
-            console.error('Function execution failed:', error);
-            responseContent = 'Sorry, I encountered an error while changing the lookback period.';
-          }
-        } else if (input.includes('refresh')) {
-          try {
-            await executeFunction('refreshData', {});
-            responseContent = 'Data refreshed! All charts and metrics have been updated with the latest information.';
-          } catch (error) {
-            console.error('Function execution failed:', error);
-            responseContent = 'Sorry, I encountered an error while refreshing the data.';
-          }
-        } else {
-          responseContent = `I understand you're asking about: "${inputValue}". ${
-            context === 'market-selection' 
-              ? 'Let me help you choose the right market for your analysis.' 
-              : `Let me analyze that for the ${poolAddress} market and provide you with insights.`
-          }
+      setTimeout(() => {
+        void (async () => {
+          let responseContent = '';
           
-          Available functions: ${availableFunctions.map(f => f.name).join(', ')}`;
-        }
+          // Simple function detection - in a real implementation, this would be handled by an AI model
+          const input = inputValue.toLowerCase();
+          
+          if (input.includes('change') && (input.includes('period') || input.includes('lookback'))) {
+            try {
+              // Example: detect period change request
+              if (input.includes('1 week')) {
+                await executeFunction('changeLookbackPeriod', { period: '1 week' });
+                responseContent = 'Changed the lookback period to 1 week. The chart and data will update accordingly.';
+              } else if (input.includes('1 month')) {
+                await executeFunction('changeLookbackPeriod', { period: '1 month' });
+                responseContent = 'Changed the lookback period to 1 month. The chart and data will update accordingly.';
+              } else if (input.includes('3 months')) {
+                await executeFunction('changeLookbackPeriod', { period: '3 months' });
+                responseContent = 'Changed the lookback period to 3 months. The chart and data will update accordingly.';
+              } else {
+                responseContent = 'I can change the lookback period to: 1 week, 2 weeks, 1 month, 2 months, or 3 months. Please specify which period you\'d like.';
+              }
+            } catch (error) {
+              console.error('Function execution failed:', error);
+              responseContent = 'Sorry, I encountered an error while changing the lookback period.';
+            }
+          } else if (input.includes('refresh')) {
+            try {
+              await executeFunction('refreshData', {});
+              responseContent = 'Data refreshed! All charts and metrics have been updated with the latest information.';
+            } catch (error) {
+              console.error('Function execution failed:', error);
+              responseContent = 'Sorry, I encountered an error while refreshing the data.';
+            }
+          } else {
+            responseContent = `I understand you're asking about: "${inputValue}". ${
+              context === 'market-selection' 
+                ? 'Let me help you choose the right market for your analysis.' 
+                : `Let me analyze that for the ${poolAddress} market and provide you with insights.`
+            }
+            
+            Available functions: ${availableFunctions.map(f => f.name).join(', ')}`;
+          }
 
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: responseContent,
-          role: 'assistant',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-        setIsLoading(false);
-        resolve(undefined);
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: responseContent,
+            role: 'assistant',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+          setIsLoading(false);
+          resolve(undefined);
+        })();
       }, 1000);
     });
   };

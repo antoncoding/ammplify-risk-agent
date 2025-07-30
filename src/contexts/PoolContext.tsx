@@ -23,10 +23,10 @@ export type PoolContextType = {
 
 const PoolContext = createContext<PoolContextType | undefined>(undefined);
 
-interface PoolProviderProps {
+type PoolProviderProps = {
   children: React.ReactNode;
   poolAddress: string;
-}
+};
 
 export function PoolProvider({ children, poolAddress }: PoolProviderProps) {
   const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('3 months');
@@ -77,7 +77,7 @@ export function PoolProvider({ children, poolAddress }: PoolProviderProps) {
     updateLookbackPeriod,
     refreshData,
     chartControls
-  }), [poolAddress, poolConfig, lookbackPeriod, setLookbackPeriod, updateLookbackPeriod, refreshData, chartControls]);
+  }), [poolAddress, poolConfig, lookbackPeriod, setLookbackPeriod, updateLookbackPeriod, refreshData, chartControls, refreshKey]);
 
   return (
     <PoolContext.Provider value={contextValue}>

@@ -1,5 +1,5 @@
 // Whitelisted pools configuration
-export interface PoolConfig {
+export type PoolConfig = {
   address: string;
   name: string;
   pair: string;

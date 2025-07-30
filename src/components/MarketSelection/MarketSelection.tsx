@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getAllPools, PoolConfig } from '@/config/pools';
+import { getAllPools } from '@/config/pools';
 
 export default function MarketSelection() {
   const router = useRouter();
