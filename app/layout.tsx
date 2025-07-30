@@ -3,6 +3,8 @@ import './global.css';
 import GoogleAnalytics from '@/components/GoogleAnalytics/GoogleAnalytics';
 import { ClientProviders } from '@/components/providers/ClientProviders';
 import OnchainProviders from '@/OnchainProviders';
+import { ChatProvider } from '@/contexts/ChatContext';
+import PersistentChatFooter from '@/components/Chat/PersistentChatFooter';
 
 import { initAnalytics } from '@/utils/analytics';
 import { ThemeProviders } from '../src/components/providers/ThemeProvider';
@@ -35,7 +37,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProviders>
           <OnchainProviders>
             <ClientProviders>
-              {children}
+              <ChatProvider>
+                {children}
+                <PersistentChatFooter />
+              </ChatProvider>
             </ClientProviders>
           </OnchainProviders>
         </ThemeProviders>

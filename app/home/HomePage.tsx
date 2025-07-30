@@ -9,7 +9,7 @@ export default function HomePage() {
   return (
     <div className="bg-main flex min-h-screen flex-col">
       <Header ghost />
-      <main className="container mx-auto flex flex-1 flex-col items-center justify-center">
+      <main className="container mx-auto flex flex-1 flex-col items-center justify-center pb-20">
         <section className="flex w-full flex-col items-center justify-center">
           <div className="h-48 w-full sm:h-44 sm:w-4/5 md:w-3/5">
             <h2 className="mb-2 flex flex-col gap-6 px-4 text-center font-zen text-3xl leading-tight text-secondary sm:mb-10 sm:text-4xl md:text-5xl">
@@ -17,7 +17,7 @@ export default function HomePage() {
                 <span className="text-primary">Ammplify Risk Agent</span>
               </div>
               <div className="flex items-center justify-center text-2xl">
-                <span>(Smart) Ape with AI</span>
+                <span>Understading AMM Liquidity Management</span>
               </div>
             </h2>
           </div>
