@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
+import { getTokenByAddress } from '@/config/tokens';
 
 type Token = {
   address: string;
@@ -20,8 +21,22 @@ type TokenProviderContextType = {
 const TokenProviderContext = createContext<TokenProviderContextType | null>(null);
 
 export function TokenProvider({ children }: { children: React.ReactNode }) {
-  const findToken = (): Token | null => {
-    console.log('Mock findToken');
+  const findToken = (address: string, chainId: number): Token | null => {
+    // For now, we only support mainnet (chainId 1)
+    if (chainId !== 1) {
+      return null;
+    }
+
+    const tokenConfig = getTokenByAddress(address);
+    if (tokenConfig) {
+      return {
+        address: tokenConfig.address,
+        symbol: tokenConfig.symbol,
+        decimals: tokenConfig.decimals,
+        img: tokenConfig.img,
+        isFactoryToken: false,
+      };
+    }
 
     return null;
   };

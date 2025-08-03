@@ -5,6 +5,7 @@ import { ClientProviders } from '@/components/providers/ClientProviders';
 import OnchainProviders from '@/OnchainProviders';
 import { ChatProvider } from '@/contexts/ChatContext';
 import PersistentChatFooter from '@/components/Chat/PersistentChatFooter';
+import ChatInitializer from '@/components/Chat/ChatInitializer';
 
 import { initAnalytics } from '@/utils/analytics';
 import { ThemeProviders } from '../src/components/providers/ThemeProvider';
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <OnchainProviders>
             <ClientProviders>
               <ChatProvider>
+                <ChatInitializer />
                 {children}
                 <PersistentChatFooter />
               </ChatProvider>

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+import { chatService, ChatProvider, LLMChatProvider } from '@/services/chatService';
 
 type Message = {
   id: string;
@@ -30,6 +31,11 @@ type ChatContextType = {
   registerFunction: (func: ChatFunction) => void;
   unregisterFunction: (name: string) => void;
   executeFunction: (name: string, params: Record<string, any>) => Promise<void>;
+  // Chat history management
+  clearChatHistory: () => void;
+  // LLM provider management
+  setChatProvider: (provider: ChatProvider) => void;
+  sendMessage: (message: string) => Promise<void>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -39,6 +45,31 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [isVisible, setIsVisible] = useState(true);
   const [availableFunctions, setAvailableFunctions] = useState<ChatFunction[]>([]);
   const pathname = usePathname();
+
+  // Load messages from localStorage on mount
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('ammplify-chat-messages');
+    if (savedMessages) {
+      try {
+        const parsed = JSON.parse(savedMessages);
+        // Convert timestamp strings back to Date objects
+        const messagesWithDates = parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(messagesWithDates);
+      } catch (error) {
+        console.error('Failed to load chat messages from localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Save messages to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('ammplify-chat-messages', JSON.stringify(messages));
+    }
+  }, [messages]);
 
   // Determine context and poolAddress based on current route
   const getContextFromPath = () => {
@@ -79,6 +110,69 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [availableFunctions]);
 
+  // Clear chat history
+  const clearChatHistory = useCallback(() => {
+    setMessages([]);
+    localStorage.removeItem('ammplify-chat-messages');
+  }, []);
+
+  // LLM provider management
+  const setChatProvider = useCallback((provider: ChatProvider) => {
+    chatService.setProvider(provider);
+  }, []);
+
+  // Send message through chat service
+  const sendMessage = useCallback(async (message: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: message,
+      role: 'user',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+
+    try {
+      const chatContext = {
+        type: context,
+        poolAddress,
+        availableFunctions: availableFunctions.map(f => f.name),
+        userHistory: messages
+      };
+
+      const response = await chatService.sendMessage(message, chatContext);
+      
+      // Execute any function calls
+      if (response.functionCalls) {
+        for (const funcCall of response.functionCalls) {
+          await executeFunction(funcCall.name, funcCall.parameters);
+        }
+      }
+
+      // Add assistant response
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: response.content,
+        role: 'assistant',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      // Add error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: 'Sorry, I encountered an error processing your message. Please try again.',
+        role: 'assistant',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  }, [context, poolAddress, availableFunctions, messages, executeFunction]);
+
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     messages,
@@ -90,8 +184,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     availableFunctions,
     registerFunction,
     unregisterFunction,
-    executeFunction
-  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, availableFunctions, registerFunction, unregisterFunction, executeFunction]);
+    executeFunction,
+    clearChatHistory,
+    setChatProvider,
+    sendMessage
+  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage]);
 
   return (
     <ChatContext.Provider value={contextValue}>

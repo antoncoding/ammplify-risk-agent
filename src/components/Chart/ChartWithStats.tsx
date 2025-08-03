@@ -8,8 +8,9 @@ import { usePoolStats, LookbackPeriod } from '@/hooks/usePoolStats';
 import { useChatFunctions } from '@/hooks/useChatFunctions';
 import { parsePoolAddress } from '@/utils/poolUtils';
 import PoolMetrics from './PoolMetrics';
-import { createChart, AreaSeries, LineSeries, createSeriesMarkers } from 'lightweight-charts';
+import { createChart, AreaSeries, LineSeries } from 'lightweight-charts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TokenIcon } from '@/components/TokenIcon';
 
 // Helper function to convert lookback period to days
 const getDaysFromLookbackPeriod = (period: LookbackPeriod): number => {
@@ -47,11 +48,11 @@ function ChartWithStats() {
     pairName: `${poolData.token0.symbol}/${poolData.token1.symbol}`,
     feeTier: poolData.feeTier
   } : poolConfig ? {
-    token0: '',
-    token1: '',
-    symbol0: poolConfig.pair.split('-')[0],
-    symbol1: poolConfig.pair.split('-')[1],
-    pairName: poolConfig.name,
+    token0: poolConfig.token0,
+    token1: poolConfig.token1,
+    symbol0: poolConfig.token0Config.symbol,
+    symbol1: poolConfig.token1Config.symbol,
+    pairName: poolConfig.displayName,
     feeTier: poolConfig.feeTier
   } : parsePoolAddress(poolAddress);
 
@@ -141,18 +142,15 @@ function ChartWithStats() {
           const startPrice = dedupedData[startIndex].value;
           const endTime = dedupedData[endIndex].time;
           
-          // Add start date marker using series markers
-          const startMarker = [{
-            time: startTime,
-            position: 'aboveBar' as const,
+          // Create a separate line series for the marker point
+          const markerSeries = chart.addSeries(LineSeries, {
             color: '#F59E0B',
-            shape: 'circle' as const,
-            text: `Start (${lookbackPeriod})`,
-            price: startPrice,
-            size: 1, // Make it a smaller dot
-          }];
-          
-          createSeriesMarkers(areaSeries, startMarker);
+            lineWidth: 1,
+            lineVisible: false,
+            pointMarkersVisible: true,
+            pointMarkersRadius: 4,
+          });
+          markerSeries.setData([{ time: startTime, value: startPrice }]);
 
           // Animate zoom to the selected period with smooth transition
           setTimeout(() => {
@@ -270,10 +268,28 @@ function ChartWithStats() {
                 <ArrowLeft className="h-4 w-4" />
               </button>
             )}
-            <div className="text-3xl font-bold">{tokenPair?.pairName ?? 'TOKEN0/TOKEN1'}</div>
+            <div className="flex items-center gap-3">
+              {tokenPair && (
+                <div className="flex items-center gap-2">
+                  <TokenIcon 
+                    address={tokenPair.token0} 
+                    chainId={1} 
+                    width={32} 
+                    height={32}
+                  />
+                  <TokenIcon 
+                    address={tokenPair.token1} 
+                    chainId={1} 
+                    width={32} 
+                    height={32}
+                  />
+                </div>
+              )}
+              <div className="text-3xl font-bold">{tokenPair?.pairName ?? 'TOKEN0/TOKEN1'}</div>
+            </div>
             {tokenPair?.feeTier && (
               <div className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">
-                {(parseInt(tokenPair.feeTier) / 10000).toFixed(2)}%
+                {(parseInt(String(tokenPair.feeTier)) / 10000).toFixed(2)}%
               </div>
             )}
           </div>

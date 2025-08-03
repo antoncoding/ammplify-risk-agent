@@ -2,11 +2,11 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { LookbackPeriod } from '@/hooks/usePoolStats';
-import { getPoolConfig, isValidPool } from '@/config/pools';
+import { getPoolWithTokens, isValidPool, PoolWithTokens } from '@/config/pools';
 
 export type PoolContextType = {
   poolAddress: string;
-  poolConfig: ReturnType<typeof getPoolConfig>;
+  poolConfig: PoolWithTokens | null;
   lookbackPeriod: LookbackPeriod;
   setLookbackPeriod: (period: LookbackPeriod) => void;
   // Functions that can be invoked by chat
@@ -37,7 +37,7 @@ export function PoolProvider({ children, poolAddress }: PoolProviderProps) {
     throw new Error(`Invalid pool address: ${poolAddress}. Pool not whitelisted.`);
   }
 
-  const poolConfig = getPoolConfig(poolAddress);
+  const poolConfig = getPoolWithTokens(poolAddress);
 
   // Functions that can be called by chat or other components - use useCallback to prevent infinite loops
   const updateLookbackPeriod = useCallback((period: LookbackPeriod) => {
