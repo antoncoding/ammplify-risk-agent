@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, ChevronDown, Bot, Trash2 } from 'lucide-react';
 import { useChatContext } from '@/contexts/ChatContext';
-import PoolRankingDisplay from './PoolRankingDisplay';
+import { PoolData } from '@/types/ai';
+import PoolRecommendationCards from './PoolRecommendationCards';
+import GenerativeUI, { GenerativeUIComponent } from './GenerativeUI';
 
 type Message = {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
-  poolRanking?: any[];
+  poolRanking?: PoolData[];
   toolResults?: any;
 };
 
@@ -20,6 +22,7 @@ export default function PersistentChatFooter() {
   const [isLoading, setIsLoading] = useState(false);
   const [height, setHeight] = useState(320);
   const [isDragging, setIsDragging] = useState(false);
+  const [generativeUI, setGenerativeUI] = useState<GenerativeUIComponent | null>(null);
   
   const resizeRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -31,6 +34,89 @@ export default function PersistentChatFooter() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Generate smart suggestions based on context and available data
+  useEffect(() => {
+    if (context === 'pool-selection' && poolData.length > 0 && messages.length === 0) {
+      // Show initial pool-related suggestions when no conversation has started
+      const suggestions: GenerativeUIComponent = {
+        type: 'buttonList',
+        title: 'Quick suggestions:',
+        actions: [
+          {
+            id: 'low-risk',
+            label: 'Show me low-risk pools',
+            action: () => {
+              setInputValue('I want low-risk pools with stable returns');
+              setTimeout(() => void handleSendMessage(), 100);
+            },
+            variant: 'primary'
+          },
+          {
+            id: 'high-volume',
+            label: 'High volume pools',
+            action: () => {
+              setInputValue('Show me pools with the highest trading volume');
+              setTimeout(() => void handleSendMessage(), 100);
+            }
+          },
+          {
+            id: 'eth-pairs',
+            label: 'ETH trading pairs',
+            action: () => {
+              setInputValue('I want to see ETH trading pairs');
+              setTimeout(() => void handleSendMessage(), 100);
+            }
+          },
+          {
+            id: 'low-fees',
+            label: 'Lowest fee options',
+            action: () => {
+              setInputValue('Find pools with the lowest fees');
+              setTimeout(() => void handleSendMessage(), 100);
+            }
+          }
+        ]
+      };
+      setGenerativeUI(suggestions);
+    } else if (context === 'range-analysis') {
+      // Different suggestions for range analysis
+      const suggestions: GenerativeUIComponent = {
+        type: 'buttonList',
+        title: 'Price analysis options:',
+        actions: [
+          {
+            id: 'conservative',
+            label: 'Conservative range (±10%)',
+            action: () => {
+              setInputValue('What would be a conservative price range with ±10% movement?');
+              setTimeout(() => void handleSendMessage(), 100);
+            },
+            variant: 'primary'
+          },
+          {
+            id: 'moderate',
+            label: 'Moderate range (±25%)',
+            action: () => {
+              setInputValue('Show me a moderate price range with ±25% movement');
+              setTimeout(() => void handleSendMessage(), 100);
+            }
+          },
+          {
+            id: 'aggressive',
+            label: 'Wide range (±50%)',
+            action: () => {
+              setInputValue('What about a wide price range with ±50% movement?');
+              setTimeout(() => void handleSendMessage(), 100);
+            }
+          }
+        ]
+      };
+      setGenerativeUI(suggestions);
+    } else {
+      setGenerativeUI(null);
+    }
+  }, [context, poolData, messages]);
 
   // Handle resize drag
   useEffect(() => {
@@ -61,7 +147,7 @@ export default function PersistentChatFooter() {
 
   const getGreeting = () => {
     if (context === 'pool-selection') {
-      return "🤖 Tell me about your investment preferences and I'll recommend the best pools for you!";
+      return "🤖 Tell me which tokens you're interested in and your risk preferences - I'll recommend the best liquidity pools!";
     } else {
       return "Let's analyze this pool. What price range do you think is reasonable for the future?";
     }
@@ -69,13 +155,13 @@ export default function PersistentChatFooter() {
 
   const getPlaceholder = () => {
     if (context === 'pool-selection') {
-      return "E.g., I want low risk with steady returns, or I prefer high APY with some volatility...";
+      return "E.g., I want ETH/USDC with low fees, or show me WBTC pairs with high volume...";
     } else {
       return "Ask me about this pool or describe your price expectations...";
     }
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isLoading) return;
     
     // Check if we have pool data for pool selection context
@@ -90,12 +176,14 @@ export default function PersistentChatFooter() {
 
     try {
       await sendMessage(messageToSend);
+      // Clear suggestions after sending a message
+      setGenerativeUI(null);
     } catch (error) {
       console.error('Failed to send message:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [inputValue, isLoading, context, poolData, sendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -133,7 +221,7 @@ export default function PersistentChatFooter() {
         role="button"
         aria-label="Expand chat"
       >
-        <div className="w-full px-6 py-4">
+        <div className="w-full max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-center">
             <Bot className="h-5 w-5 text-muted-foreground" />
           </div>
@@ -156,36 +244,41 @@ export default function PersistentChatFooter() {
       
       <div className="h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 bg-muted/30">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <Bot className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="flex items-center gap-2">
-            {messages.length > 0 && (
-              <button
-                onClick={clearChatHistory}
-                className="p-1.5 hover:bg-muted rounded-lg transition-colors"
-                title="Clear chat history"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            )}
-            <button
-              onClick={toggleCollapsed}
-              className="p-1.5 hover:bg-muted rounded-lg transition-colors"
-              title="Minimize chat"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </button>
+        <div className="bg-muted/30">
+          <div className="w-full max-w-4xl mx-auto px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <Bot className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-2">
+                {messages.length > 0 && (
+                  <button
+                    onClick={clearChatHistory}
+                    className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+                    title="Clear chat history"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+                <button
+                  onClick={toggleCollapsed}
+                  className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+                  title="Minimize chat"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Messages Area */}
         <div 
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+          className="flex-1 overflow-y-auto"
         >
+          <div className="w-full max-w-4xl mx-auto px-6 py-4 space-y-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
               <p className="text-muted-foreground font-zen">
@@ -223,11 +316,9 @@ export default function PersistentChatFooter() {
                   >
                     <div className="text-sm font-zen">{message.content}</div>
                     
-                    {/* Display pool rankings for pool selection messages */}
+                    {/* Display pool recommendations for pool selection messages */}
                     {message.role === 'assistant' && message.poolRanking && context === 'pool-selection' && (
-                      <div className="mt-4">
-                        <PoolRankingDisplay pools={message.poolRanking} />
-                      </div>
+                      <PoolRecommendationCards pools={message.poolRanking} />
                     )}
                     
                     {/* Display tool results for range analysis messages */}
@@ -264,11 +355,22 @@ export default function PersistentChatFooter() {
               <div ref={messagesEndRef} />
             </>
           )}
+          </div>
         </div>
 
+        {/* Generative UI Suggestions Area */}
+        {generativeUI && (
+          <div className="border-t bg-muted/20">
+            <div className="w-full max-w-4xl mx-auto px-6 py-4">
+              <GenerativeUI component={generativeUI} />
+            </div>
+          </div>
+        )}
+
         {/* Input Area */}
-        <div className="border-t px-6 py-4">
-          <div className="flex gap-3 items-center">
+        <div className="border-t">
+          <div className="w-full max-w-4xl mx-auto px-6 py-4">
+            <div className="flex gap-3 items-center">
             <textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -296,6 +398,7 @@ export default function PersistentChatFooter() {
             >
               <Send className="h-4 w-4" />
             </button>
+            </div>
           </div>
         </div>
       </div>

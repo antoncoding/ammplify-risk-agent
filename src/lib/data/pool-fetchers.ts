@@ -1,13 +1,11 @@
 import { PoolData } from '@/types/ai';
 import { poolsDataQuery, poolDataQuery } from '@/queries/uniswap';
-import { SUBGRAPH_CONFIG, WHITELISTED_POOLS } from '@/config/subgraph';
+import { SUBGRAPH_CONFIG, WHITELISTED_POOL_ADDRESSES } from '@/config/pools';
 
 export interface PoolMetrics {
   address: string;
-  tvl: number;
   volume24h: number;
   fees24h: number;
-  apy: number;
   volatility: number;
   priceChange24h: number;
 }
@@ -105,17 +103,7 @@ async function querySubgraph(query: string): Promise<any> {
   }
 }
 
-function calculateTVL(sqrtPrice: string, liquidity: string): number {
-  // Simplified TVL calculation - in reality this needs more complex math
-  // For now, we'll estimate based on liquidity
-  const liquidityNum = parseFloat(liquidity);
-  const sqrtPriceNum = parseFloat(sqrtPrice);
-  
-  if (!liquidityNum || !sqrtPriceNum) return 0;
-  
-  // Rough estimation - this should be replaced with proper Uniswap V3 math
-  return (liquidityNum * sqrtPriceNum) / 1e12; // Rough conversion
-}
+
 
 function calculateVolatility(poolDayData: any[]): number {
   if (poolDayData.length < 2) return 0;
@@ -139,8 +127,8 @@ export async function getAllPoolsData(): Promise<PoolData[]> {
   console.log('🚀 Starting to fetch all pools data...');
   
   try {
-    const query = poolsDataQuery(WHITELISTED_POOLS);
-    console.log('📝 Generated query for pools:', WHITELISTED_POOLS);
+    const query = poolsDataQuery(WHITELISTED_POOL_ADDRESSES);
+    console.log('📝 Generated query for pools:', WHITELISTED_POOL_ADDRESSES);
     
     const response: SubgraphPoolResponse = await querySubgraph(query);
     
@@ -154,26 +142,24 @@ export async function getAllPoolsData(): Promise<PoolData[]> {
     const processedPools = response.pools.map(pool => {
       console.log('🔄 Processing pool:', pool.id);
       
-      const latestDayData = pool.poolDayData[0];
+      // Always use index 1 (last completed day) - only fallback to 0 if only one data point exists
+      const latestDayData = pool.poolDayData.length > 1 ? pool.poolDayData[1] : pool.poolDayData[0];
       const volume24h = latestDayData ? parseFloat(latestDayData.volumeUSD) : 0;
       const fees24h = latestDayData ? parseFloat(latestDayData.feesUSD) : 0;
-      const tvl = calculateTVL(pool.sqrtPrice, pool.liquidity);
-      const apy = calculateAPY(fees24h, tvl);
+      
       const volatility = calculateVolatility(pool.poolDayData);
 
-      console.log(`📊 Pool ${pool.token0.symbol}/${pool.token1.symbol}: TVL=$${tvl.toLocaleString()}, Volume=$${volume24h.toLocaleString()}`);
+      console.log(`📊 Pool ${pool.token0.symbol}/${pool.token1.symbol}: Volume=$${volume24h.toLocaleString()}`);
 
       return {
         address: pool.id,
         token0: pool.token0.symbol,
         token1: pool.token1.symbol,
-        tvl,
         volume24h,
-        apy,
         fees24h,
         volatility
       };
-    }).filter(pool => pool.tvl > 0); // Filter out pools with no liquidity
+    });
     
     console.log(`🎯 Returning ${processedPools.length} valid pools`);
     return processedPools;
@@ -194,26 +180,20 @@ export async function getPoolMetrics(poolAddress: string): Promise<PoolMetrics> 
       throw new Error(`Pool ${poolAddress} not found`);
     }
 
-    const latestDayData = pool.poolDayData[0];
-    const previousDayData = pool.poolDayData[1];
+    // Always use index 1 (last completed day) - only fallback to 0 if only one data point exists
+    const latestDayData = pool.poolDayData.length > 1 ? pool.poolDayData[1] : pool.poolDayData[0];
     
     const volume24h = latestDayData ? parseFloat(latestDayData.volumeUSD) : 0;
     const fees24h = latestDayData ? parseFloat(latestDayData.feesUSD) : 0;
-    const tvl = calculateTVL(pool.sqrtPrice, pool.liquidity);
-    const apy = calculateAPY(fees24h, tvl);
     const volatility = calculateVolatility(pool.poolDayData);
     
-    // Calculate price change (simplified)
-    const currentVolume = latestDayData ? parseFloat(latestDayData.volumeUSD) : 0;
-    const previousVolume = previousDayData ? parseFloat(previousDayData.volumeUSD) : 0;
-    const priceChange24h = previousVolume > 0 ? ((currentVolume - previousVolume) / previousVolume) * 100 : 0;
+    // No price change calculation needed - just use the last completed day data
+    const priceChange24h = 0;
 
     return {
       address: pool.id,
-      tvl,
       volume24h,
       fees24h,
-      apy,
       volatility,
       priceChange24h
     };
@@ -243,11 +223,7 @@ export async function getPoolVolume(poolAddress: string): Promise<number> {
   return pool?.volume24h || 0;
 }
 
-export async function getPoolTVL(poolAddress: string): Promise<number> {
-  const pools = await getCachedPoolsData();
-  const pool = pools.find(p => p.address.toLowerCase() === poolAddress.toLowerCase());
-  return pool?.tvl || 0;
-}
+
 
 export async function getPoolFees(poolAddress: string): Promise<number> {
   const pools = await getCachedPoolsData();
@@ -255,11 +231,7 @@ export async function getPoolFees(poolAddress: string): Promise<number> {
   return pool?.fees24h || 0;
 }
 
-export async function getPoolAPY(poolAddress: string): Promise<number> {
-  const pools = await getCachedPoolsData();
-  const pool = pools.find(p => p.address.toLowerCase() === poolAddress.toLowerCase());
-  return pool?.apy || 0;
-}
+
 
 export async function getPoolVolatility(poolAddress: string): Promise<number> {
   const pools = await getCachedPoolsData();

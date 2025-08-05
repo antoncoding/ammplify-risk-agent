@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { poolDataQuery } from '@/queries/uniswap';
-import { SUBGRAPH_CONFIG } from '@/config/subgraph';
+import { SUBGRAPH_CONFIG } from '@/config/pools';
 
 export type LookbackPeriod = '3 months' | '2 months' | '1 month' | '2 weeks' | '1 week';
 

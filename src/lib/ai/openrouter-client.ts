@@ -52,10 +52,9 @@ export class OpenRouterClient {
         if (poolData) {
           const poolSummary = poolData.map(pool => 
             `Pool: ${pool.token0}/${pool.token1} (${pool.address})\n` +
-            `- TVL: $${(pool.tvl / 1000000).toFixed(1)}M\n` +
             `- Volume 24h: $${(pool.volume24h / 1000000).toFixed(1)}M\n` +
-            `- APY: ${pool.apy}%\n` +
-            `- Volatility: ${pool.volatility}%\n`
+            `- Fees 24h: $${(pool.fees24h / 1000).toFixed(1)}K\n` +
+            `- Volatility: ${pool.volatility.toFixed(1)}%\n`
           ).join('\n');
           
           fullMessage = `${message}\n\nAvailable pools to rank:\n${poolSummary}`;

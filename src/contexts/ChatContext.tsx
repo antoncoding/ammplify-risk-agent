@@ -97,7 +97,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           if (response.ok) {
             const pools = await response.json();
             console.log('✅ Received and formatted pools:', pools);
-            console.log('📊 Pool details:', pools.map(p => `${p.token0}/${p.token1}: $${p.tvl.toLocaleString()} TVL, ${p.apy}% APY`));
+            console.log('📊 Pool details:', pools.map((p: PoolData) => `${p.token0}/${p.token1}: Vol: $${p.volume24h.toLocaleString()}, Fees: $${p.fees24h.toLocaleString()}`));
             setPoolData(pools);
           }
         } catch (error) {

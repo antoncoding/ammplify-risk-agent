@@ -67,4 +67,4 @@ export function formatNumber(num: number): string {
   } else {
     return num.toLocaleString();
   }
-} 
+}

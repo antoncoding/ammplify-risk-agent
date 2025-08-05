@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bot } from 'lucide-react';
 import {
@@ -11,14 +11,41 @@ import {
 import { getAllPoolsWithTokens, formatFeeTier } from '@/config/pools';
 import { TokenIcon } from '@/components/TokenIcon';
 import { useChatContext } from '@/contexts/ChatContext';
+import { PoolData } from '@/types/ai';
+import { formatCurrency } from '@/utils/poolUtils';
 
 export default function MarketSelection() {
   const router = useRouter();
   const { setIsCollapsed } = useChatContext();
   const [selectedMarket, setSelectedMarket] = useState<string>('');
   const [isLoading, setIsLoading] = useState<string>('');
+  const [poolMetrics, setPoolMetrics] = useState<Record<string, PoolData>>({});
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
   
   const markets = getAllPoolsWithTokens();
+
+  // Fetch pool metrics
+  useEffect(() => {
+    const fetchPoolMetrics = async () => {
+      try {
+        const response = await fetch('/api/pools/all');
+        if (response.ok) {
+          const pools: PoolData[] = await response.json();
+          const metricsMap = pools.reduce((acc, pool) => {
+            acc[pool.address] = pool;
+            return acc;
+          }, {} as Record<string, PoolData>);
+          setPoolMetrics(metricsMap);
+        }
+      } catch (error) {
+        console.error('Failed to fetch pool metrics:', error);
+      } finally {
+        setLoadingMetrics(false);
+      }
+    };
+
+    fetchPoolMetrics();
+  }, []);
 
   const handleMarketSelect = (poolAddress: string) => {
     setSelectedMarket(poolAddress);
@@ -81,34 +108,48 @@ export default function MarketSelection() {
           <SelectTrigger className="w-full h-12">
             <SelectValue placeholder="Browse available pools" />
           </SelectTrigger>
-          <SelectContent>
-            {markets.map((market) => (
-              <SelectItem key={market.address} value={market.address}>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <TokenIcon 
-                        address={market.token0Config.address} 
-                        chainId={1} 
-                        width={20} 
-                        height={20}
-                      />
-                      <TokenIcon 
-                        address={market.token1Config.address} 
-                        chainId={1} 
-                        width={20} 
-                        height={20}
-                      />
+          <SelectContent className="max-h-[320px]">
+            {markets.map((market) => {
+              const metrics = poolMetrics[market.address];
+
+              return (
+                <SelectItem key={market.address} value={market.address} className="p-3">
+                  <div className="flex flex-col w-full">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <TokenIcon 
+                            address={market.token0Config.address} 
+                            chainId={1} 
+                            width={20} 
+                            height={20}
+                          />
+                          <TokenIcon 
+                            address={market.token1Config.address} 
+                            chainId={1} 
+                            width={20} 
+                            height={20}
+                          />
+                        </div>
+                        <span className="font-medium">{market.displayName}</span>
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {formatFeeTier(market.feeTier)}
+                        </span>
+                      </div>
                     </div>
-                    <span className="font-medium">{market.displayName}</span>
-                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                      {formatFeeTier(market.feeTier)}
-                    </span>
+                    {metrics && !loadingMetrics && (
+                      <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                        <span>Vol: {formatCurrency(metrics.volume24h)}</span>
+                        <span>Fees: {formatCurrency(metrics.fees24h)}</span>
+                      </div>
+                    )}
+                    {loadingMetrics && (
+                      <div className="text-xs text-muted-foreground/50 mt-1">Loading metrics...</div>
+                    )}
                   </div>
-                  <span className="text-xs text-muted-foreground">{market.description}</span>
-                </div>
-              </SelectItem>
-            ))}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
 

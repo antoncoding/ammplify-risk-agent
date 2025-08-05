@@ -66,8 +66,8 @@ export default function PoolRankingDisplay({ pools, rankings, explanation }: Poo
                 </span>
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-500">APY</div>
-                <div className="font-bold text-lg">{pool.apy.toFixed(1)}%</div>
+                <div className="text-sm text-gray-500">Volatility</div>
+                <div className="font-bold text-lg">{pool.volatility.toFixed(1)}%</div>
               </div>
             </div>
 
@@ -75,8 +75,8 @@ export default function PoolRankingDisplay({ pools, rankings, explanation }: Poo
               <div className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-gray-500" />
                 <div>
-                  <div className="text-xs text-gray-500">TVL</div>
-                  <div className="font-semibold">{formatCurrency(pool.tvl)}</div>
+                  <div className="text-xs text-gray-500">24h Fees</div>
+                  <div className="font-semibold">{formatCurrency(pool.fees24h)}</div>
                 </div>
               </div>
 

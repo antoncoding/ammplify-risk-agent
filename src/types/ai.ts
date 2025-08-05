@@ -29,9 +29,7 @@ export interface PoolData {
   address: string;
   token0: string;
   token1: string;
-  tvl: number;
   volume24h: number;
-  apy: number;
   fees24h: number;
   volatility: number;
 }
