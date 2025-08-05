@@ -15,10 +15,9 @@ type Message = {
 };
 
 export default function PersistentChatFooter() {
-  const { messages, context, poolAddress, isVisible, clearChatHistory, sendMessage, poolData, loadingPools } = useChatContext();
+  const { messages, context, poolAddress, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools } = useChatContext();
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [height, setHeight] = useState(320);
   const [isDragging, setIsDragging] = useState(false);
   
@@ -62,9 +61,17 @@ export default function PersistentChatFooter() {
 
   const getGreeting = () => {
     if (context === 'pool-selection') {
-      return "I'll help you find the best liquidity pools. Tell me about your risk tolerance and preferences!";
+      return "🤖 Tell me about your investment preferences and I'll recommend the best pools for you!";
     } else {
       return "Let's analyze this pool. What price range do you think is reasonable for the future?";
+    }
+  };
+
+  const getPlaceholder = () => {
+    if (context === 'pool-selection') {
+      return "E.g., I want low risk with steady returns, or I prefer high APY with some volatility...";
+    } else {
+      return "Ask me about this pool or describe your price expectations...";
     }
   };
 
@@ -266,7 +273,8 @@ export default function PersistentChatFooter() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="flex-1 p-3 border rounded-lg resize-none bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-zen"
+              placeholder={getPlaceholder()}
+              className="flex-1 p-3 border rounded-lg resize-none bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-zen placeholder:text-muted-foreground/60"
               rows={1}
               style={{
                 minHeight: '44px',

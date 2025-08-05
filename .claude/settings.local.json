@@ -6,7 +6,8 @@
       "Bash(git commit:*)",
       "Bash(npx tsc:*)",
       "Bash(rm:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": []
   }

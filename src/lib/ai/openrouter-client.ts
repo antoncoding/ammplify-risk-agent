@@ -1,171 +1,92 @@
-import { AgentRole, ChatRequest, ChatResponse, ToolCall, PoolData } from '@/types/ai';
+import { Agent } from '@mastra/core/agent';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { AgentRole, ChatRequest, ChatResponse, PoolData } from '@/types/ai';
 import { PROMPTS } from '@/config/prompts';
-import { calculateVolAndDriftTool, calculateVolAndDriftFromRange, VolDriftInput } from '@/lib/tools/vol-drift-calculator';
+import { calculateVolAndDriftFromRange, VolDriftInput } from '@/lib/tools/vol-drift-calculator';
 
-interface OpenRouterMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
-  tool_call_id?: string;
-  tool_calls?: ToolCall[];
-}
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
-interface OpenRouterResponse {
-  choices: Array<{
-    message: {
-      content: string | null;
-      tool_calls?: ToolCall[];
-    };
-  }>;
-}
+const poolSelectionAgent = new Agent({
+  model: openrouter('anthropic/claude-3-opus'),
+  name: 'PoolSelectionAgent',
+  instructions: PROMPTS[AgentRole.POOL_SELECTION],
+});
+
+const rangeAnalysisAgent = new Agent({
+  model: openrouter('anthropic/claude-3-opus'),
+  name: 'RangeAnalysisAgent',
+  instructions: PROMPTS[AgentRole.RANGE_ANALYSIS],
+  tools: {
+    calculateVolAndDriftFromRange: {
+      description: 'Calculate volatility and drift from price range',
+      parameters: {
+        type: 'object',
+        properties: {
+          lowerBound: { type: 'number' },
+          upperBound: { type: 'number' },
+          currentPrice: { type: 'number' },
+          timeHorizon: { type: 'number' }
+        },
+        required: ['lowerBound', 'upperBound', 'currentPrice', 'timeHorizon']
+      },
+      execute: async (args: VolDriftInput) => {
+        return await calculateVolAndDriftFromRange(args);
+      }
+    }
+  }
+});
 
 export class OpenRouterClient {
-  private apiKey: string;
-  private baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-  private defaultModel: string;
-
-  constructor() {
-    this.apiKey = process.env.OPENROUTER_API_KEY || '';
-    this.defaultModel = process.env.DEFAULT_MODEL || 'anthropic/claude-3-sonnet';
-  }
-
   async chat(request: ChatRequest): Promise<ChatResponse> {
-    const { message, role, context, poolData } = request;
+    const { message, role, poolData } = request;
     
-    let systemPrompt = PROMPTS[role];
-    
-    // For pool selection agent, include pool data in the system prompt
-    if (role === AgentRole.POOL_SELECTION && poolData) {
-      const poolSummary = poolData.map(pool => 
-        `Pool: ${pool.token0}/${pool.token1} (${pool.address})\n` +
-        `- TVL: $${(pool.tvl / 1000000).toFixed(1)}M\n` +
-        `- Volume 24h: $${(pool.volume24h / 1000000).toFixed(1)}M\n` +
-        `- APY: ${pool.apy}%\n` +
-        `- Volatility: ${pool.volatility}%\n`
-      ).join('\n');
-      
-      systemPrompt += `\n\nAvailable pools to rank:\n${poolSummary}`;
-    }
-    
-    const messages: OpenRouterMessage[] = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: message }
-    ];
-
-    const tools = this.getToolsForRole(role);
-
     try {
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-          'X-Title': 'Ammplify Risk Agent'
-        },
-        body: JSON.stringify({
-          model: this.defaultModel,
-          messages,
-          tools: tools.length > 0 ? tools : undefined,
-          tool_choice: tools.length > 0 ? 'auto' : undefined,
-          temperature: 0.7,
-          max_tokens: 1500
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.status}`);
-      }
-
-      const data: OpenRouterResponse = await response.json();
-      const choice = data.choices[0];
+      let agent: Agent;
+      let fullMessage = message;
       
-      let responseText = choice?.message?.content || '';
-      let toolCalls = choice?.message?.tool_calls || [];
-      
-      // Execute tool calls if present
-      if (toolCalls.length > 0) {
-        const toolResults = await this.executeToolCalls(toolCalls);
+      if (role === AgentRole.POOL_SELECTION) {
+        agent = poolSelectionAgent;
         
-        // Add tool results to conversation and get final response
-        const followUpMessages: OpenRouterMessage[] = [
-          ...messages,
-          { role: 'assistant', content: responseText, tool_calls: toolCalls },
-          ...toolResults.map(result => ({
-            role: 'tool' as const,
-            content: JSON.stringify(result.result),
-            tool_call_id: result.id
-          }))
-        ];
-        
-        const followUpResponse = await fetch(this.baseUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-            'X-Title': 'Ammplify Risk Agent'
-          },
-          body: JSON.stringify({
-            model: this.defaultModel,
-            messages: followUpMessages,
-            temperature: 0.7,
-            max_tokens: 1500
-          })
-        });
-        
-        if (followUpResponse.ok) {
-          const followUpData: OpenRouterResponse = await followUpResponse.json();
-          responseText = followUpData.choices[0]?.message?.content || responseText;
+        if (poolData) {
+          const poolSummary = poolData.map(pool => 
+            `Pool: ${pool.token0}/${pool.token1} (${pool.address})\n` +
+            `- TVL: $${(pool.tvl / 1000000).toFixed(1)}M\n` +
+            `- Volume 24h: $${(pool.volume24h / 1000000).toFixed(1)}M\n` +
+            `- APY: ${pool.apy}%\n` +
+            `- Volatility: ${pool.volatility}%\n`
+          ).join('\n');
+          
+          fullMessage = `${message}\n\nAvailable pools to rank:\n${poolSummary}`;
         }
+      } else {
+        agent = rangeAnalysisAgent;
       }
+      
+      const response = await agent.generate([
+        {
+          role: 'user',
+          content: fullMessage,
+        },
+      ]);
       
       return {
-        response: responseText || 'No response generated',
+        response: response.text || 'No response generated',
         role,
-        toolCalls
+        toolCalls: response.toolCalls?.map(toolCall => ({
+          id: toolCall.toolCallId,
+          type: 'function' as const,
+          function: {
+            name: toolCall.toolName,
+            arguments: JSON.stringify(toolCall.args)
+          }
+        })) || []
       };
     } catch (error) {
       console.error('OpenRouter client error:', error);
       throw new Error('Failed to get AI response');
     }
-  }
-
-  private getToolsForRole(role: AgentRole) {
-    if (role === AgentRole.RANGE_ANALYSIS) {
-      return [calculateVolAndDriftTool];
-    }
-    return [];
-  }
-
-  private async executeToolCalls(toolCalls: ToolCall[]) {
-    const results = [];
-    
-    for (const toolCall of toolCalls) {
-      try {
-        const { name, arguments: args } = toolCall.function;
-        const parsedArgs = JSON.parse(args);
-        
-        let result;
-        if (name === 'calculateVolAndDriftFromRange') {
-          result = await calculateVolAndDriftFromRange(parsedArgs as VolDriftInput);
-        } else {
-          throw new Error(`Unknown tool: ${name}`);
-        }
-        
-        results.push({
-          id: toolCall.id,
-          result
-        });
-      } catch (error) {
-        console.error(`Tool execution error for ${toolCall.function.name}:`, error);
-        results.push({
-          id: toolCall.id,
-          result: { error: 'Tool execution failed' }
-        });
-      }
-    }
-    
-    return results;
   }
 }
 

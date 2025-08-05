@@ -29,6 +29,8 @@ type ChatContextType = {
   poolAddress?: string;
   isVisible: boolean;
   setIsVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  isCollapsed: boolean;
+  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   // Function invocation system for chat
   availableFunctions: ChatFunction[];
   registerFunction: (func: ChatFunction) => void;
@@ -50,35 +52,16 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isVisible, setIsVisible] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [availableFunctions, setAvailableFunctions] = useState<ChatFunction[]>([]);
   const [poolData, setPoolData] = useState<PoolData[]>([]);
   const [loadingPools, setLoadingPools] = useState(false);
   const pathname = usePathname();
 
-  // Load messages from localStorage on mount
+  // Clear messages when route changes to start fresh threads
   useEffect(() => {
-    const savedMessages = localStorage.getItem('ammplify-chat-messages');
-    if (savedMessages) {
-      try {
-        const parsed = JSON.parse(savedMessages);
-        // Convert timestamp strings back to Date objects
-        const messagesWithDates = parsed.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }));
-        setMessages(messagesWithDates);
-      } catch (error) {
-        console.error('Failed to load chat messages from localStorage:', error);
-      }
-    }
-  }, []);
-
-  // Save messages to localStorage whenever messages change
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('ammplify-chat-messages', JSON.stringify(messages));
-    }
-  }, [messages]);
+    setMessages([]);
+  }, [pathname]);
 
   // Determine context and poolAddress based on current route
   const getContextFromPath = () => {
@@ -93,9 +76,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const { context, poolAddress } = getContextFromPath();
 
-  // Show chat only on chat-related pages
+  // Show chat on chat pages, start collapsed by default
   useEffect(() => {
-    setIsVisible(pathname === '/chat' || pathname?.startsWith('/chat/'));
+    const shouldShow = pathname === '/chat' || pathname?.startsWith('/chat/');
+    setIsVisible(shouldShow);
+    if (shouldShow) {
+      setIsCollapsed(true);
+    }
   }, [pathname]);
 
   // Load pool data for pool selection context - SIMPLIFIED
@@ -162,7 +149,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Clear chat history
   const clearChatHistory = useCallback(() => {
     setMessages([]);
-    localStorage.removeItem('ammplify-chat-messages');
   }, []);
 
   // LLM provider management
@@ -251,6 +237,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     poolAddress,
     isVisible,
     setIsVisible,
+    isCollapsed,
+    setIsCollapsed,
     availableFunctions,
     registerFunction,
     unregisterFunction,
@@ -261,7 +249,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     poolData,
     loadingPools,
     refreshPools
-  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage, poolData, loadingPools, refreshPools]);
+  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, isCollapsed, setIsCollapsed, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage, poolData, loadingPools, refreshPools]);
 
   return (
     <ChatContext.Provider value={contextValue}>
