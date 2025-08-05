@@ -39,4 +39,36 @@ export function poolDataQuery(poolAddress: string) {
       }
     }
   }`;
+}
+
+export function poolsDataQuery(poolIds: string[]) {
+  const poolIdsString = poolIds.map(id => `"${id.toLowerCase()}"`).join(', ');
+  return `{
+    pools(where: { id_in: [${poolIdsString}] }) {
+      id
+      feeTier
+      token0 {
+        id
+        symbol
+      }
+      token1 {
+        id
+        symbol
+      }
+      sqrtPrice
+      liquidity
+      poolHourData(first: 2, orderBy: periodStartUnix, orderDirection: desc) {
+        volumeUSD
+        volumeToken0
+        volumeToken1
+      }
+      poolDayData(first: 2, orderBy: date, orderDirection: desc) {
+        volumeUSD
+        volumeToken0
+        volumeToken1
+        date
+        feesUSD
+      }
+    }
+  }`;
 } 

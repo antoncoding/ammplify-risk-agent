@@ -103,3 +103,7 @@ export type AsyncState<T> = {
   loading: LoadingState;
   error: AppError | null;
 };
+
+// Re-export AI and Financial types for convenience
+export * from './ai';
+export * from './financial';

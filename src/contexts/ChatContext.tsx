@@ -3,12 +3,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { chatService, ChatProvider, LLMChatProvider } from '@/services/chatService';
+import { AgentRole, PoolData } from '@/types/ai';
 
 type Message = {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  poolRanking?: PoolData[]; // For displaying pool rankings
+  toolResults?: any; // For displaying tool results
 };
 
 // Function invocation types for chat-controlled actions
@@ -22,7 +25,7 @@ export type ChatFunction = {
 type ChatContextType = {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
-  context: 'market-selection' | 'pool-analysis';
+  context: 'pool-selection' | 'range-analysis';
   poolAddress?: string;
   isVisible: boolean;
   setIsVisible: React.Dispatch<React.SetStateAction<boolean>>;
@@ -36,6 +39,10 @@ type ChatContextType = {
   // LLM provider management
   setChatProvider: (provider: ChatProvider) => void;
   sendMessage: (message: string) => Promise<void>;
+  // Pool data for pool selection
+  poolData: PoolData[];
+  loadingPools: boolean;
+  refreshPools: () => Promise<void>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -44,6 +51,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isVisible, setIsVisible] = useState(true);
   const [availableFunctions, setAvailableFunctions] = useState<ChatFunction[]>([]);
+  const [poolData, setPoolData] = useState<PoolData[]>([]);
+  const [loadingPools, setLoadingPools] = useState(false);
   const pathname = usePathname();
 
   // Load messages from localStorage on mount
@@ -74,12 +83,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Determine context and poolAddress based on current route
   const getContextFromPath = () => {
     if (pathname === '/chat') {
-      return { context: 'market-selection' as const, poolAddress: undefined };
+      return { context: 'pool-selection' as const, poolAddress: undefined };
     } else if (pathname?.startsWith('/chat/')) {
       const poolAddress = pathname.split('/')[2];
-      return { context: 'pool-analysis' as const, poolAddress };
+      return { context: 'range-analysis' as const, poolAddress };
     }
-    return { context: 'market-selection' as const, poolAddress: undefined };
+    return { context: 'pool-selection' as const, poolAddress: undefined };
   };
 
   const { context, poolAddress } = getContextFromPath();
@@ -88,6 +97,46 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsVisible(pathname === '/chat' || pathname?.startsWith('/chat/'));
   }, [pathname]);
+
+  // Load pool data for pool selection context - SIMPLIFIED
+  useEffect(() => {
+    if (context === 'pool-selection' && poolData.length === 0) {
+      console.log('🔄 Loading pools for pool-selection context');
+      setLoadingPools(true);
+      const loadPools = async () => {
+        try {
+          console.log('📡 Fetching from /api/pools/all');
+          const response = await fetch('/api/pools/all');
+          if (response.ok) {
+            const pools = await response.json();
+            console.log('✅ Received and formatted pools:', pools);
+            console.log('📊 Pool details:', pools.map(p => `${p.token0}/${p.token1}: $${p.tvl.toLocaleString()} TVL, ${p.apy}% APY`));
+            setPoolData(pools);
+          }
+        } catch (error) {
+          console.error('💥 Failed to fetch pools - no fallback:', error);
+          setPoolData([]);
+        } finally {
+          setLoadingPools(false);
+          console.log('🏁 Pool loading completed');
+        }
+      };
+      loadPools();
+    }
+  }, [context, poolData.length]);
+
+  // Refresh pools function - SIMPLIFIED
+  const refreshPools = useCallback(async () => {
+    try {
+      const response = await fetch('/api/pools/all');
+      if (response.ok) {
+        const pools = await response.json();
+        setPoolData(pools);
+      }
+    } catch (error) {
+      console.error('Failed to refresh pools:', error);
+    }
+  }, []);
 
   // Function management - memoize to prevent recreation on every render
   const registerFunction = useCallback((func: ChatFunction) => {
@@ -121,7 +170,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     chatService.setProvider(provider);
   }, []);
 
-  // Send message through chat service
+  // Send message through simplified agent system
   const sendMessage = useCallback(async (message: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -133,29 +182,50 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      const chatContext = {
-        type: context,
-        poolAddress,
-        availableFunctions: availableFunctions.map(f => f.name),
-        userHistory: messages
-      };
+      let response;
+      let assistantMessage: Message;
 
-      const response = await chatService.sendMessage(message, chatContext);
-      
-      // Execute any function calls
-      if (response.functionCalls) {
-        for (const funcCall of response.functionCalls) {
-          await executeFunction(funcCall.name, funcCall.parameters);
+      if (context === 'pool-selection') {
+        // Use pool selection agent
+        const apiResponse = await fetch('/api/agents/pool-selection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, poolData })
+        });
+        
+        if (apiResponse.ok) {
+          response = await apiResponse.json();
+          assistantMessage = {
+            id: (Date.now() + 1).toString(),
+            content: response.response,
+            role: 'assistant',
+            timestamp: new Date(),
+            poolRanking: poolData // Include pool data for ranking display
+          };
+        } else {
+          throw new Error('No response from pool selection agent');
+        }
+      } else {
+        // Use range analysis agent
+        const apiResponse = await fetch('/api/agents/range-analysis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, context: { poolAddress } })
+        });
+        
+        if (apiResponse.ok) {
+          response = await apiResponse.json();
+          assistantMessage = {
+            id: (Date.now() + 1).toString(),
+            content: response.response,
+            role: 'assistant',
+            timestamp: new Date(),
+            toolResults: response.toolCalls // Include tool results if any
+          };
+        } else {
+          throw new Error('No response from range analysis agent');
         }
       }
-
-      // Add assistant response
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response.content,
-        role: 'assistant',
-        timestamp: new Date()
-      };
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
@@ -171,7 +241,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       setMessages(prev => [...prev, errorMessage]);
     }
-  }, [context, poolAddress, availableFunctions, messages, executeFunction]);
+  }, [context, poolAddress, poolData]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
@@ -187,8 +257,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     executeFunction,
     clearChatHistory,
     setChatProvider,
-    sendMessage
-  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage]);
+    sendMessage,
+    poolData,
+    loadingPools,
+    refreshPools
+  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage, poolData, loadingPools, refreshPools]);
 
   return (
     <ChatContext.Provider value={contextValue}>

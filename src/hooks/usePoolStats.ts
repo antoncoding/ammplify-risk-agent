@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { poolDataQuery } from '@/queries/uniswap';
+import { SUBGRAPH_CONFIG } from '@/config/subgraph';
 
 export type LookbackPeriod = '3 months' | '2 months' | '1 month' | '2 weeks' | '1 week';
 
@@ -45,7 +46,6 @@ type UsePoolStatsOptions = {
   lookbackPeriod?: LookbackPeriod;
 };
 
-const DEFAULT_SUBGRAPH_ID = '5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV';
 
 // Convert lookback period to days
 const getDaysFromLookbackPeriod = (period: LookbackPeriod): number => {
@@ -114,7 +114,7 @@ export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' 
 
     const fetchPoolData = async () => {
       try {
-        const endpoint = `https://gateway.thegraph.com/api/${apiKey}/subgraphs/id/${DEFAULT_SUBGRAPH_ID}`;
+        const endpoint = SUBGRAPH_CONFIG.getGatewayUrl(apiKey);
         const query = poolDataQuery(poolAddress);
         
         const response = await fetch(endpoint, {

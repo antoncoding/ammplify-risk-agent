@@ -3,16 +3,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, ChevronDown, Bot, Trash2 } from 'lucide-react';
 import { useChatContext } from '@/contexts/ChatContext';
+import PoolRankingDisplay from './PoolRankingDisplay';
 
 type Message = {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  poolRanking?: any[];
+  toolResults?: any;
 };
 
 export default function PersistentChatFooter() {
-  const { messages, context, poolAddress, isVisible, clearChatHistory, sendMessage } = useChatContext();
+  const { messages, context, poolAddress, isVisible, clearChatHistory, sendMessage, poolData, loadingPools } = useChatContext();
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -22,6 +25,8 @@ export default function PersistentChatFooter() {
   const resizeRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  console.log('poolData', poolData);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -56,15 +61,21 @@ export default function PersistentChatFooter() {
   }, [isDragging]);
 
   const getGreeting = () => {
-    if (context === 'market-selection') {
-      return "What token pair are you considering providing liquidity to?";
+    if (context === 'pool-selection') {
+      return "I'll help you find the best liquidity pools. Tell me about your risk tolerance and preferences!";
     } else {
-      return "Ask anything about this pool";
+      return "Let's analyze this pool. What price range do you think is reasonable for the future?";
     }
   };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
+    
+    // Check if we have pool data for pool selection context
+    if (context === 'pool-selection' && (!poolData || poolData.length === 0)) {
+      console.error('No pool data available for ranking');
+      return;
+    }
     
     const messageToSend = inputValue;
     setInputValue('');
@@ -169,10 +180,25 @@ export default function PersistentChatFooter() {
           className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
         >
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
               <p className="text-muted-foreground font-zen">
                 {getGreeting()}
               </p>
+              
+              {context === 'pool-selection' && loadingPools && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  <span className="ml-2">Loading pool data...</span>
+                </div>
+              )}
+              
+              {context === 'pool-selection' && !loadingPools && poolData.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Ready to analyze {poolData.length} pools
+                </p>
+              )}
             </div>
           ) : (
             <>
@@ -189,6 +215,24 @@ export default function PersistentChatFooter() {
                     }`}
                   >
                     <div className="text-sm font-zen">{message.content}</div>
+                    
+                    {/* Display pool rankings for pool selection messages */}
+                    {message.role === 'assistant' && message.poolRanking && context === 'pool-selection' && (
+                      <div className="mt-4">
+                        <PoolRankingDisplay pools={message.poolRanking} />
+                      </div>
+                    )}
+                    
+                    {/* Display tool results for range analysis messages */}
+                    {message.role === 'assistant' && message.toolResults && context === 'range-analysis' && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="font-semibold text-blue-800 mb-2">📊 Analysis Results</h4>
+                        <pre className="text-xs text-blue-700 overflow-auto">
+                          {JSON.stringify(message.toolResults, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    
                     <div className="text-xs opacity-60 mt-1 font-zen">
                       {message.timestamp.toLocaleTimeString([], { 
                         hour: '2-digit', 
@@ -229,7 +273,7 @@ export default function PersistentChatFooter() {
                 maxHeight: '120px',
                 height: 'auto'
               }}
-              disabled={isLoading}
+              disabled={isLoading || (context === 'pool-selection' && loadingPools)}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = 'auto';
@@ -238,7 +282,7 @@ export default function PersistentChatFooter() {
             />
             <button
               onClick={handleSendClick}
-              disabled={!inputValue.trim() || isLoading}
+              disabled={!inputValue.trim() || isLoading || (context === 'pool-selection' && loadingPools)}
               className="p-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
               style={{ height: '44px' }}
             >
