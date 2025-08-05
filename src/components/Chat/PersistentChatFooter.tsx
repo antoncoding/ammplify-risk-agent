@@ -7,14 +7,7 @@ import { PoolData } from '@/types/ai';
 import PoolRecommendationCards from './PoolRecommendationCards';
 import GenerativeUI, { GenerativeUIComponent } from './GenerativeUI';
 
-type Message = {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-  poolRanking?: PoolData[];
-  toolResults?: any;
-};
+// Legacy message type - now using StructuredMessage from context
 
 export default function PersistentChatFooter() {
   const { messages, context, poolAddress, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools } = useChatContext();
@@ -316,13 +309,27 @@ export default function PersistentChatFooter() {
                   >
                     <div className="text-sm font-zen">{message.content}</div>
                     
-                    {/* Display pool recommendations for pool selection messages */}
-                    {message.role === 'assistant' && message.poolRanking && context === 'pool-selection' && (
+                    {/* Display structured UI components from agent responses */}
+                    {message.role === 'assistant' && message.structuredResponse?.uiComponents && (
+                      <div className="mt-4 space-y-3">
+                        {message.structuredResponse.uiComponents.map((component, index) => (
+                          <GenerativeUI 
+                            key={index}
+                            component={component}
+                            poolData={poolData}
+                            onAction={(message) => void handleSendMessage()}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Legacy support: Display pool recommendations for pool selection messages */}
+                    {message.role === 'assistant' && !message.structuredResponse && message.poolRanking && context === 'pool-selection' && (
                       <PoolRecommendationCards pools={message.poolRanking} />
                     )}
                     
-                    {/* Display tool results for range analysis messages */}
-                    {message.role === 'assistant' && message.toolResults && context === 'range-analysis' && (
+                    {/* Legacy support: Display tool results for range analysis messages */}
+                    {message.role === 'assistant' && !message.structuredResponse && message.toolResults && context === 'range-analysis' && (
                       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <h4 className="font-semibold text-blue-800 mb-2">📊 Analysis Results</h4>
                         <pre className="text-xs text-blue-700 overflow-auto">

@@ -14,6 +14,7 @@ export interface ChatResponse {
   response: string;
   toolCalls?: ToolCall[];
   role: AgentRole;
+  structuredData?: any; // Structured response from agent tools
 }
 
 export interface ToolCall {

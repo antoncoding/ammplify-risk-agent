@@ -2,17 +2,11 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { chatService, ChatProvider, LLMChatProvider } from '@/services/chatService';
-import { AgentRole, PoolData } from '@/types/ai';
+import { chatService, ChatProvider } from '@/services/chatService';
+import { PoolData } from '@/types/ai';
+import { StructuredMessage, AgentAPIResponse, UIComponent } from '@/types/agent-responses';
 
-type Message = {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-  poolRanking?: PoolData[]; // For displaying pool rankings
-  toolResults?: any; // For displaying tool results
-};
+type Message = StructuredMessage;
 
 // Function invocation types for chat-controlled actions
 export type ChatFunction = {
@@ -156,7 +150,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     chatService.setProvider(provider);
   }, []);
 
-  // Send message through simplified agent system
+  // Send message through structured agent system
   const sendMessage = useCallback(async (message: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -168,50 +162,45 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      let response;
-      let assistantMessage: Message;
+      let apiResponse: Response;
 
       if (context === 'pool-selection') {
         // Use pool selection agent
-        const apiResponse = await fetch('/api/agents/pool-selection', {
+        apiResponse = await fetch('/api/agents/pool-selection', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message, poolData })
         });
-        
-        if (apiResponse.ok) {
-          response = await apiResponse.json();
-          assistantMessage = {
-            id: (Date.now() + 1).toString(),
-            content: response.response,
-            role: 'assistant',
-            timestamp: new Date(),
-            poolRanking: poolData // Include pool data for ranking display
-          };
-        } else {
-          throw new Error('No response from pool selection agent');
-        }
       } else {
         // Use range analysis agent
-        const apiResponse = await fetch('/api/agents/range-analysis', {
+        apiResponse = await fetch('/api/agents/range-analysis', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message, context: { poolAddress } })
         });
-        
-        if (apiResponse.ok) {
-          response = await apiResponse.json();
-          assistantMessage = {
-            id: (Date.now() + 1).toString(),
-            content: response.response,
-            role: 'assistant',
-            timestamp: new Date(),
-            toolResults: response.toolCalls // Include tool results if any
-          };
-        } else {
-          throw new Error('No response from range analysis agent');
-        }
       }
+      
+      if (!apiResponse.ok) {
+        throw new Error(`Agent API error: ${apiResponse.status}`);
+      }
+
+      const agentResponseData: AgentAPIResponse = await apiResponse.json();
+      
+      // Create assistant message with structured response support
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: agentResponseData.response,
+        role: 'assistant',
+        timestamp: new Date(),
+        // New structured response format
+        structuredResponse: agentResponseData.structuredData ? {
+          text: agentResponseData.response,
+          uiComponents: agentResponseData.structuredData && 'type' in agentResponseData.structuredData ? [agentResponseData.structuredData as unknown as UIComponent] : undefined
+        } : undefined,
+        // Legacy support for backward compatibility
+        poolRanking: context === 'pool-selection' ? poolData : undefined,
+        toolResults: agentResponseData.toolCalls
+      };
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
