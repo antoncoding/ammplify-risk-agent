@@ -8,12 +8,10 @@ import ChartWithStats from '@/components/Chart/ChartWithStats';
 import InputArea from '@/components/DirectInput/InputArea';
 
 type PoolContentProps = {
-  poolId: string; // This is actually the poolAddress from the URL
+  poolAddress: string; // Pool contract address from the URL parameter
 };
 
-export default function PoolContent({ poolId }: PoolContentProps) {
-  // poolId is actually the poolAddress from the URL parameter
-  const poolAddress = poolId;
+export default function PoolContent({ poolAddress }: PoolContentProps) {
   
   return (
     <PoolProvider poolAddress={poolAddress}>

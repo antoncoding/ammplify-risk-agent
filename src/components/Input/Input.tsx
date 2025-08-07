@@ -57,9 +57,8 @@ export default function Input({
         if (setError) setError(null);
 
         // eslint-disable-next-line @typescript-eslint/no-shadow
-      } catch (e) {
+      } catch {
         if (setError) setError('Invalid input');
-        console.log('e', e);
       }
     },
     [decimals, setError, setInputAmount, setValue, max, exceedMaxErrMessage, allowExceedMax],

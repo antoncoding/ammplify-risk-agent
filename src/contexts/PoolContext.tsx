@@ -12,11 +12,11 @@ export type PoolContextType = {
   // Functions that can be invoked by chat
   updateLookbackPeriod: (period: LookbackPeriod) => void;
   refreshData: () => void;
-  // Chart control functions for future chat integration
+  // Chart control functions for future chat integration (placeholder implementations)
   chartControls: {
-    zoomToTimeRange: (startTime: number, endTime: number) => void;
-    highlightPriceLevel: (price: number) => void;
-    addAnnotation: (time: number, price: number, text: string) => void;
+    zoomToTimeRange: () => void;
+    highlightPriceLevel: () => void;
+    addAnnotation: () => void;
     resetView: () => void;
   };
 };
@@ -50,21 +50,21 @@ export function PoolProvider({ children, poolAddress }: PoolProviderProps) {
 
   // Chart control functions - placeholders for future implementation - memoize the object itself
   const chartControls = useMemo(() => ({
-    zoomToTimeRange: (startTime: number, endTime: number) => {
+    zoomToTimeRange: () => {
       // TODO: Implement chart zoom functionality
-      console.log('Zooming to time range:', { startTime, endTime });
+      // Chart will zoom to the specified time range
     },
-    highlightPriceLevel: (price: number) => {
+    highlightPriceLevel: () => {
       // TODO: Implement price level highlighting
-      console.log('Highlighting price level:', price);
+      // Chart will highlight the specified price level
     },
-    addAnnotation: (time: number, price: number, text: string) => {
+    addAnnotation: () => {
       // TODO: Implement chart annotations
-      console.log('Adding annotation:', { time, price, text });
+      // Chart will add annotation at specified coordinates
     },
     resetView: () => {
       // TODO: Implement chart reset
-      console.log('Resetting chart view');
+      // Chart will reset to default view
     }
   }), []);
 

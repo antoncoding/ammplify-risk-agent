@@ -2,7 +2,6 @@
 
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProviders } from './ThemeProvider';
 import { TokenProvider } from './TokenProvider';
 
 // Create a client with default configuration
@@ -23,11 +22,9 @@ type ClientProvidersProps = {
 export function ClientProviders({ children }: ClientProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProviders>
-        <TokenProvider>
-          {children}
-        </TokenProvider>
-      </ThemeProviders>
+      <TokenProvider>
+        {children}
+      </TokenProvider>
     </QueryClientProvider>
   );
 }

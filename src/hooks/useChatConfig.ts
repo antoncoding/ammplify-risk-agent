@@ -21,7 +21,6 @@ export function useChatConfig() {
           'https://api.openai.com/v1'
         );
         setChatProvider(provider);
-        console.log('Using OpenAI chat provider');
       } else if (claudeApiKey) {
         // Use Claude (Anthropic)
         const provider = new LLMChatProvider(
@@ -30,12 +29,10 @@ export function useChatConfig() {
           'https://api.anthropic.com/v1'
         );
         setChatProvider(provider);
-        console.log('Using Claude chat provider');
       } else {
-        // Fallback to mock
+        // Fallback to mock provider when no API keys are configured
         const provider = new MockChatProvider();
         setChatProvider(provider);
-        console.log('Using mock chat provider - add API keys to enable LLM');
       }
     };
 

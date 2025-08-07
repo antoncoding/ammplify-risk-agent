@@ -8,10 +8,11 @@ export const metadata: Metadata = {
 
 type PageProps = {
   params: {
-    poolId: string;
+    poolId: string; // URL parameter name (keeping as poolId for URL structure)
   };
 };
 
 export default function Page({ params }: PageProps) {
-  return <PoolContent poolId={params.poolId} />;
+  // Pass the poolId URL parameter as poolAddress to the component
+  return <PoolContent poolAddress={params.poolId} />;
 }

@@ -79,27 +79,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [pathname]);
 
-  // Load pool data for pool selection context - SIMPLIFIED
+  // Load pool data for pool selection context
   useEffect(() => {
     if (context === 'pool-selection' && poolData.length === 0) {
-      console.log('🔄 Loading pools for pool-selection context');
       setLoadingPools(true);
       const loadPools = async () => {
         try {
-          console.log('📡 Fetching from /api/pools/all');
           const response = await fetch('/api/pools/all');
           if (response.ok) {
             const pools = await response.json() as PoolData[];
-            console.log('✅ Received and formatted pools:', pools);
-            console.log('📊 Pool details:', pools.map((p: PoolData) => `${p.token0}/${p.token1}: Vol: $${p.volume24h.toLocaleString()}, Fees: $${p.fees24h.toLocaleString()}`));
             setPoolData(pools);
           }
         } catch (error) {
-          console.error('💥 Failed to fetch pools - no fallback:', error);
+          console.error('Failed to fetch pools:', error);
           setPoolData([]);
         } finally {
           setLoadingPools(false);
-          console.log('🏁 Pool loading completed');
         }
       };
       void loadPools();

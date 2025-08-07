@@ -11,7 +11,11 @@
       "Bash(npm run dev:*)",
       "Bash(pnpm build:*)",
       "Bash(npm run lint)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(pnpm run lint:*)",
+      "Bash(npx next:*)",
+      "Bash(SKIP_ENV_VALIDATION=1 npx next build)"
     ],
     "deny": []
   },
