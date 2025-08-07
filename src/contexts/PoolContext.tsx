@@ -30,7 +30,7 @@ type PoolProviderProps = {
 
 export function PoolProvider({ children, poolAddress }: PoolProviderProps) {
   const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('3 months');
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [, setRefreshKey] = useState(0);
 
   // Validate pool address and get config
   if (!isValidPool(poolAddress)) {
@@ -77,7 +77,7 @@ export function PoolProvider({ children, poolAddress }: PoolProviderProps) {
     updateLookbackPeriod,
     refreshData,
     chartControls
-  }), [poolAddress, poolConfig, lookbackPeriod, setLookbackPeriod, updateLookbackPeriod, refreshData, chartControls, refreshKey]);
+  }), [poolAddress, poolConfig, lookbackPeriod, setLookbackPeriod, updateLookbackPeriod, refreshData, chartControls]);
 
   return (
     <PoolContext.Provider value={contextValue}>

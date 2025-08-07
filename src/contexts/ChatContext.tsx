@@ -12,8 +12,8 @@ type Message = StructuredMessage;
 export type ChatFunction = {
   name: string;
   description: string;
-  parameters: Record<string, any>;
-  execute: (params: Record<string, any>) => void | Promise<void>;
+  parameters: Record<string, unknown>;
+  execute: (params: Record<string, unknown>) => void | Promise<void>;
 };
 
 type ChatContextType = {
@@ -29,7 +29,7 @@ type ChatContextType = {
   availableFunctions: ChatFunction[];
   registerFunction: (func: ChatFunction) => void;
   unregisterFunction: (name: string) => void;
-  executeFunction: (name: string, params: Record<string, any>) => Promise<void>;
+  executeFunction: (name: string, params: Record<string, unknown>) => Promise<void>;
   // Chat history management
   clearChatHistory: () => void;
   // LLM provider management
@@ -89,7 +89,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           console.log('📡 Fetching from /api/pools/all');
           const response = await fetch('/api/pools/all');
           if (response.ok) {
-            const pools = await response.json();
+            const pools = await response.json() as PoolData[];
             console.log('✅ Received and formatted pools:', pools);
             console.log('📊 Pool details:', pools.map((p: PoolData) => `${p.token0}/${p.token1}: Vol: $${p.volume24h.toLocaleString()}, Fees: $${p.fees24h.toLocaleString()}`));
             setPoolData(pools);
@@ -102,7 +102,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           console.log('🏁 Pool loading completed');
         }
       };
-      loadPools();
+      void loadPools();
     }
   }, [context, poolData.length]);
 
@@ -111,7 +111,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch('/api/pools/all');
       if (response.ok) {
-        const pools = await response.json();
+        const pools = await response.json() as PoolData[];
         setPoolData(pools);
       }
     } catch (error) {
@@ -131,7 +131,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setAvailableFunctions(prev => prev.filter(f => f.name !== name));
   }, []);
 
-  const executeFunction = useCallback(async (name: string, params: Record<string, any>) => {
+  const executeFunction = useCallback(async (name: string, params: Record<string, unknown>) => {
     const func = availableFunctions.find(f => f.name === name);
     if (func) {
       await func.execute(params);
@@ -184,7 +184,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         throw new Error(`Agent API error: ${apiResponse.status}`);
       }
 
-      const agentResponseData: AgentAPIResponse = await apiResponse.json();
+      const agentResponseData = await apiResponse.json() as AgentAPIResponse;
       
       // Create assistant message with structured response support
       const assistantMessage: Message = {

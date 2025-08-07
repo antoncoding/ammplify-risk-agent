@@ -4,7 +4,7 @@ import { AgentRole, ChatRequest } from '@/types/ai';
 
 export async function POST(req: NextRequest) {
   try {
-    const body: ChatRequest = await req.json();
+    const body = await req.json() as ChatRequest;
     const { message, role, context } = body;
     
     if (!message || !role) {
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
-    const response = await openRouterClient.chat({ message, role, context });
+    const response = await openRouterClient.chat({ message, role, context: context as Record<string, unknown> });
     
     return NextResponse.json(response);
   } catch (error) {

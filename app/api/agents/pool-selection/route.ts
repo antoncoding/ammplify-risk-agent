@@ -4,8 +4,8 @@ import { AgentRole, PoolData } from '@/types/ai';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { message, poolData }: { message: string; poolData: PoolData[] } = body;
+    const body = await req.json() as { message: string; poolData: PoolData[] };
+    const { message, poolData } = body;
     
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });

@@ -43,7 +43,7 @@ export function useChatFunctions() {
           endTime: { type: 'number', description: 'End timestamp' }
         },
         execute: async (params) => {
-          chartControls.zoomToTimeRange(params.startTime, params.endTime);
+          chartControls.zoomToTimeRange(params.startTime as number, params.endTime as number);
         }
       },
       {
@@ -53,7 +53,7 @@ export function useChatFunctions() {
           price: { type: 'number', description: 'Price level to highlight' }
         },
         execute: async (params) => {
-          chartControls.highlightPriceLevel(params.price);
+          chartControls.highlightPriceLevel(params.price as number);
         }
       },
       {
@@ -65,7 +65,7 @@ export function useChatFunctions() {
           text: { type: 'string', description: 'Annotation text' }
         },
         execute: async (params) => {
-          chartControls.addAnnotation(params.time, params.price, params.text);
+          chartControls.addAnnotation(params.time as number, params.price as number, params.text as string);
         }
       },
       {

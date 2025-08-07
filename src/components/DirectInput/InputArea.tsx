@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { GoQuestion } from 'react-icons/go';
+import { Bot } from 'lucide-react';
 import { useChartState } from '@/contexts/ChartStateContext';
+import { useChatContext } from '@/contexts/ChatContext';
 import { Tooltip } from '@/components/ui/tooltip';
 import PredictionResult from './PredictionResult';
 
@@ -12,6 +14,8 @@ function InputArea() {
     userPrediction,
     currentPrice,
   } = useChartState();
+  
+  const { setIsCollapsed } = useChatContext();
 
   // Local state for controlled inputs
   const [localVol, setLocalVol] = useState(volatility);
@@ -32,6 +36,10 @@ function InputArea() {
     setCalcVol(localVol);
     setCalcTime(localTime);
     setShowResult(true);
+  };
+
+  const handleAskAgent = () => {
+    setIsCollapsed(false);
   };
 
   return (
@@ -117,6 +125,26 @@ function InputArea() {
             Calculate
           </button>
         </div>
+
+        <div className="flex items-center justify-center my-6">
+          <div className="flex-1 border-t border-muted"></div>
+          <span className="px-3 text-xs text-muted-foreground font-medium">OR</span>
+          <div className="flex-1 border-t border-muted"></div>
+        </div>
+
+        <button
+          onClick={handleAskAgent}
+          className="w-full p-3 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group"
+        >
+          <div className="flex items-center justify-center gap-2">
+            <Bot className="h-4 w-4 text-primary group-hover:animate-pulse" />
+            <span className="text-primary font-medium">Ask Agent for Help</span>
+          </div>
+          <div className="text-xs text-primary/70 mt-1">
+            Get AI assistance with volatility, drift, and time horizon estimates
+          </div>
+        </button>
+
         {showResult && (
           <PredictionResult
             drift={calcDrift}

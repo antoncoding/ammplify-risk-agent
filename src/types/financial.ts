@@ -1,9 +1,9 @@
-export interface PoolAnalysisRequest {
+export type PoolAnalysisRequest = {
   poolAddress: string;
   timeframe?: '1d' | '7d' | '30d';
 }
 
-export interface PoolAnalysisResponse {
+export type PoolAnalysisResponse = {
   tvl: string;
   volume24h: string;
   apy: string;
@@ -11,26 +11,26 @@ export interface PoolAnalysisResponse {
   recommendation: string;
 }
 
-export interface RiskAnalysisRequest {
+export type RiskAnalysisRequest = {
   token0: string;
   token1: string;
   amount: number;
 }
 
-export interface RiskAnalysisResponse {
+export type RiskAnalysisResponse = {
   impermanentLoss: string;
   volatilityRisk: string;
   liquidityRisk: string;
   overallRisk: number;
 }
 
-export interface YieldAnalysisRequest {
+export type YieldAnalysisRequest = {
   poolAddress: string;
   amount: number;
   duration: number;
 }
 
-export interface YieldAnalysisResponse {
+export type YieldAnalysisResponse = {
   projectedYield: string;
   dailyYield: string;
   feeAPR: string;

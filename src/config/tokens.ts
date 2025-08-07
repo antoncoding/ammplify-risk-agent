@@ -1,4 +1,3 @@
-import { mainnet } from 'viem/chains';
 
 export enum TokenPeg {
   USD = 'USD',
@@ -53,13 +52,13 @@ export const SUPPORTED_TOKENS: Record<string, TokenConfig> = {
 
 // Helper functions
 export function getTokenBySymbol(symbol: string): TokenConfig | null {
-  return SUPPORTED_TOKENS[symbol.toUpperCase()] || null;
+  return SUPPORTED_TOKENS[symbol.toUpperCase()] ?? null;
 }
 
 export function getTokenByAddress(address: string): TokenConfig | null {
   return Object.values(SUPPORTED_TOKENS).find(
     token => token.address.toLowerCase() === address.toLowerCase()
-  ) || null;
+  ) ?? null;
 }
 
 export function getAllTokens(): TokenConfig[] {
@@ -69,5 +68,5 @@ export function getAllTokens(): TokenConfig[] {
 export function isValidToken(symbolOrAddress: string): boolean {
   const bySymbol = getTokenBySymbol(symbolOrAddress);
   const byAddress = getTokenByAddress(symbolOrAddress);
-  return !!(bySymbol || byAddress);
+  return !!(bySymbol ?? byAddress);
 }

@@ -4,7 +4,7 @@ import React from 'react';
 import { TrendingUp, TrendingDown, Activity, DollarSign, Zap } from 'lucide-react';
 import { PoolData } from '@/types/ai';
 
-interface PoolRankingProps {
+type PoolRankingProps = {
   pools: PoolData[];
   rankings?: number[];
   explanation?: string;

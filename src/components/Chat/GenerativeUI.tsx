@@ -20,13 +20,14 @@ export type GenerativeUIComponent = {
   actions: GenerativeUIAction[];
 };
 
-interface GenerativeUIProps {
+type GenerativeUIProps = {
   component: GenerativeUIComponent | UIComponent;
   poolData?: PoolData[]; // Available pool data for lookups
   onAction?: (message: string) => void; // Callback for sending messages
+  loadingSuggestion?: string | null; // ID of currently loading suggestion
 }
 
-export default function GenerativeUI({ component, poolData = [], onAction }: GenerativeUIProps) {
+export default function GenerativeUI({ component, poolData = [], onAction, loadingSuggestion }: GenerativeUIProps) {
   const router = useRouter();
   const [loadingPoolId, setLoadingPoolId] = useState<string | null>(null);
 
@@ -36,10 +37,10 @@ export default function GenerativeUI({ component, poolData = [], onAction }: Gen
     return `$${num.toFixed(0)}`;
   };
 
-  const handlePoolNavigation = async (poolId: string) => {
+  const handlePoolNavigation = (poolId: string) => {
     setLoadingPoolId(poolId);
     try {
-      await router.push(`/chat/${poolId}`);
+      router.push(`/chat/${poolId}`);
     } catch (error) {
       console.error('Navigation error:', error);
       setLoadingPoolId(null);
@@ -166,19 +167,30 @@ export default function GenerativeUI({ component, poolData = [], onAction }: Gen
           </div>
         )}
         <div className="flex flex-wrap gap-2">
-          {legacyComp.actions.map((action) => (
-            <button
-              key={action.id}
-              onClick={() => action.action()}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
-                action.variant === 'primary'
-                  ? 'bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary'
-                  : 'bg-muted/50 hover:bg-muted border border-border text-foreground hover:border-primary/20'
-              }`}
-            >
-              {action.label}
-            </button>
-          ))}
+          {legacyComp.actions.map((action) => {
+            const isLoading = loadingSuggestion === action.id;
+            return (
+              <button
+                key={action.id}
+                onClick={() => action.action()}
+                disabled={isLoading || loadingSuggestion !== null}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] relative ${
+                  action.variant === 'primary'
+                    ? 'bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary'
+                    : 'bg-muted/50 hover:bg-muted border border-border text-foreground hover:border-primary/20'
+                } ${isLoading || loadingSuggestion !== null ? 'opacity-75 cursor-not-allowed' : ''}`}
+              >
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                )}
+                <span className={isLoading ? 'opacity-0' : ''}>
+                  {action.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     );

@@ -30,7 +30,7 @@ export default function MarketSelection() {
       try {
         const response = await fetch('/api/pools/all');
         if (response.ok) {
-          const pools: PoolData[] = await response.json();
+          const pools = await response.json() as PoolData[];
           const metricsMap = pools.reduce((acc, pool) => {
             acc[pool.address] = pool;
             return acc;
@@ -44,7 +44,7 @@ export default function MarketSelection() {
       }
     };
 
-    fetchPoolMetrics();
+    void fetchPoolMetrics();
   }, []);
 
   const handleMarketSelect = (poolAddress: string) => {
@@ -52,7 +52,7 @@ export default function MarketSelection() {
     setIsLoading(poolAddress);
     
     // Simulate loading and then navigate
-    setTimeout(() => {
+    void setTimeout(() => {
       router.push(`/chat/${poolAddress}`);
     }, 800);
   };

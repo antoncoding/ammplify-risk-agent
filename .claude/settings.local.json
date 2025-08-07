@@ -9,7 +9,9 @@
       "Bash(mkdir:*)",
       "Bash(pnpm add:*)",
       "Bash(npm run dev:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(npm run lint)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

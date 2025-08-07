@@ -2,7 +2,7 @@ import { PoolData } from '@/types/ai';
 import { poolsDataQuery, poolDataQuery } from '@/queries/uniswap';
 import { SUBGRAPH_CONFIG, WHITELISTED_POOL_ADDRESSES } from '@/config/pools';
 
-export interface PoolMetrics {
+export type PoolMetrics = {
   address: string;
   volume24h: number;
   fees24h: number;
@@ -10,7 +10,7 @@ export interface PoolMetrics {
   priceChange24h: number;
 }
 
-export interface TokenInfo {
+export type TokenInfo = {
   address: string;
   symbol: string;
   name: string;
@@ -23,8 +23,8 @@ const getSubgraphUrl = () => {
   return SUBGRAPH_CONFIG.getGatewayUrl(apiKey);
 };
 
-interface SubgraphPoolResponse {
-  pools: Array<{
+type SubgraphPoolResponse = {
+  pools: {
     id: string;
     feeTier: string;
     token0: {
@@ -37,22 +37,22 @@ interface SubgraphPoolResponse {
     };
     sqrtPrice: string;
     liquidity: string;
-    poolHourData: Array<{
+    poolHourData: {
       volumeUSD: string;
       volumeToken0: string;
       volumeToken1: string;
-    }>;
-    poolDayData: Array<{
+    }[];
+    poolDayData: {
       volumeUSD: string;
       volumeToken0: string;
       volumeToken1: string;
       date: number;
       feesUSD: string;
-    }>;
-  }>;
+    }[];
+  }[];
 }
 
-async function querySubgraph(query: string): Promise<any> {
+async function querySubgraph(query: string): Promise<unknown> {
   console.log('🔍 Querying subgraph with query length:', query.length);
   
   try {
@@ -105,10 +105,10 @@ async function querySubgraph(query: string): Promise<any> {
 
 
 
-function calculateVolatility(poolDayData: any[]): number {
+function calculateVolatility(poolDayData: unknown[]): number {
   if (poolDayData.length < 2) return 0;
   
-  const volumes = poolDayData.map(day => parseFloat(day.volumeUSD));
+  const volumes = poolDayData.map(day => parseFloat((day as { volumeUSD: string }).volumeUSD));
   const mean = volumes.reduce((a, b) => a + b, 0) / volumes.length;
   const variance = volumes.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / volumes.length;
   
@@ -130,7 +130,7 @@ export async function getAllPoolsData(): Promise<PoolData[]> {
     const query = poolsDataQuery(WHITELISTED_POOL_ADDRESSES);
     console.log('📝 Generated query for pools:', WHITELISTED_POOL_ADDRESSES);
     
-    const response: SubgraphPoolResponse = await querySubgraph(query);
+    const response = await querySubgraph(query) as SubgraphPoolResponse;
     
     if (!response || !response.pools || response.pools.length === 0) {
       console.error('❌ No pools data received from subgraph');
@@ -173,7 +173,7 @@ export async function getAllPoolsData(): Promise<PoolData[]> {
 export async function getPoolMetrics(poolAddress: string): Promise<PoolMetrics> {
   try {
     const query = poolsDataQuery([poolAddress]);
-    const response: SubgraphPoolResponse = await querySubgraph(query);
+    const response = await querySubgraph(query) as SubgraphPoolResponse;
 
     const pool = response.pools[0];
     if (!pool) {
@@ -242,7 +242,7 @@ export async function getPoolVolatility(poolAddress: string): Promise<number> {
 export async function getPoolTokens(poolAddress: string): Promise<{ token0: TokenInfo; token1: TokenInfo }> {
   try {
     const query = poolsDataQuery([poolAddress]);
-    const response: SubgraphPoolResponse = await querySubgraph(query);
+    const response = await querySubgraph(query) as SubgraphPoolResponse;
 
     const pool = response.pools[0];
     if (!pool) {
@@ -273,7 +273,7 @@ export async function getPoolTokens(poolAddress: string): Promise<{ token0: Toke
 export async function getCurrentPrice(poolAddress: string): Promise<number> {
   try {
     const query = poolsDataQuery([poolAddress]);
-    const response: SubgraphPoolResponse = await querySubgraph(query);
+    const response = await querySubgraph(query) as SubgraphPoolResponse;
 
     const pool = response.pools[0];
     if (!pool) {

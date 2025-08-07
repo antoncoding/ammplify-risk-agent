@@ -1,35 +1,35 @@
 // Chat service interface for pluggable LLM backends
 
-export interface ChatMessage {
+export type ChatMessage = {
   id: string;
   content: string;
   role: 'user' | 'assistant' | 'system';
   timestamp: Date;
 }
 
-export interface ChatContext {
+export type ChatContext = {
   type: 'market-selection' | 'pool-analysis';
   poolAddress?: string;
   availableFunctions: string[];
   userHistory: ChatMessage[];
 }
 
-export interface FunctionCall {
+export type FunctionCall = {
   name: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
 }
 
-export interface ChatResponse {
+export type ChatResponse = {
   content: string;
   functionCalls?: FunctionCall[];
 }
 
 // Abstract interface for chat providers
-export interface ChatProvider {
-  sendMessage(
+export type ChatProvider = {
+  sendMessage: (
     message: string, 
     context: ChatContext
-  ): Promise<ChatResponse>;
+  ) => Promise<ChatResponse>;
 }
 
 // Mock implementation for development/fallback
@@ -82,21 +82,23 @@ export class MockChatProvider implements ChatProvider {
 export class LLMChatProvider implements ChatProvider {
   constructor(
     private apiKey: string,
-    private model: string = 'gpt-4',
+    private model = 'gpt-4',
     private baseUrl?: string
   ) {}
 
   async sendMessage(message: string, context: ChatContext): Promise<ChatResponse> {
     // This would be replaced with actual LLM API calls
-    const systemPrompt = this.buildSystemPrompt(context);
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...context.userHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })),
-      { role: 'user', content: message }
-    ];
+    // System prompt would be used in actual API call
+    // const systemPrompt = this.buildSystemPrompt(context);
+    // Messages would be used in actual API call
+    // const messages = [
+    //   { role: 'system', content: systemPrompt },
+    //   ...context.userHistory.map(msg => ({
+    //     role: msg.role,
+    //     content: msg.content
+    //   })),
+    //   { role: 'user', content: message }
+    // ];
 
     try {
       // Placeholder for actual API call

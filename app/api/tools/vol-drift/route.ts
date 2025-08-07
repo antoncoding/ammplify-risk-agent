@@ -3,8 +3,8 @@ import { calculateVolAndDriftFromRange, VolDriftInput } from '@/lib/tools/vol-dr
 
 export async function POST(req: NextRequest) {
   try {
-    const body: VolDriftInput = await req.json();
-    const { currentPrice, minPrice, maxPrice, timeframeDays, confidence } = body;
+    const body = await req.json() as VolDriftInput;
+    const { currentPrice, minPrice, maxPrice, timeframeDays } = body;
     
     if (!currentPrice || !minPrice || !maxPrice || !timeframeDays) {
       return NextResponse.json({ 

@@ -1,4 +1,4 @@
-import { getTokenBySymbol, getTokenByAddress, TokenConfig } from './tokens';
+import { getTokenByAddress, TokenConfig } from './tokens';
 
 // Whitelisted pools configuration
 export type PoolConfig = {

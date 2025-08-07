@@ -44,8 +44,10 @@ export function useChatConfig() {
 }
 
 // Utility function to manually switch providers at runtime
-export function switchToChatProvider(provider: 'openai' | 'claude' | 'mock', apiKey?: string) {
+export function useChatProviderSwitcher() {
   const { setChatProvider } = useChatContext();
+  
+  const switchToChatProvider = (provider: 'openai' | 'claude' | 'mock', apiKey?: string) => {
   
   switch (provider) {
     case 'openai':
@@ -60,4 +62,7 @@ export function switchToChatProvider(provider: 'openai' | 'claude' | 'mock', api
       setChatProvider(new MockChatProvider());
       break;
   }
+  };
+  
+  return { switchToChatProvider };
 }

@@ -3,21 +3,21 @@ export enum AgentRole {
   RANGE_ANALYSIS = 'range-analysis'
 }
 
-export interface ChatRequest {
+export type ChatRequest = {
   message: string;
   role: AgentRole;
-  context?: any;
+  context?: unknown;
   poolData?: PoolData[]; // For pool selection agent
 }
 
-export interface ChatResponse {
+export type ChatResponse = {
   response: string;
   toolCalls?: ToolCall[];
   role: AgentRole;
-  structuredData?: any; // Structured response from agent tools
+  structuredData?: unknown; // Structured response from agent tools
 }
 
-export interface ToolCall {
+export type ToolCall = {
   id: string;
   type: 'function';
   function: {
@@ -26,7 +26,7 @@ export interface ToolCall {
   };
 }
 
-export interface PoolData {
+export type PoolData = {
   address: string;
   token0: string;
   token1: string;
@@ -35,7 +35,7 @@ export interface PoolData {
   volatility: number;
 }
 
-export interface RangeData {
+export type RangeData = {
   minPrice: number;
   maxPrice: number;
   timeframe: string;

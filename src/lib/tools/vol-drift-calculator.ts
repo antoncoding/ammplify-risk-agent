@@ -1,4 +1,4 @@
-export interface VolDriftInput {
+export type VolDriftInput = {
   currentPrice: number;
   minPrice: number;
   maxPrice: number;
@@ -6,7 +6,7 @@ export interface VolDriftInput {
   confidence?: number; // Default 68% (1 standard deviation)
 }
 
-export interface VolDriftOutput {
+export type VolDriftOutput = {
   annualizedVolatility: number;
   dailyVolatility: number;
   drift: number;

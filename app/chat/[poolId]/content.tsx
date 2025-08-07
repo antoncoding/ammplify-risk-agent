@@ -5,7 +5,7 @@ import Header from '@/components/layout/header/Header';
 import { ChartStateProvider } from '@/contexts/ChartStateContext';
 import { PoolProvider } from '@/contexts/PoolContext';
 import ChartWithStats from '@/components/Chart/ChartWithStats';
-import DriftVolInput from '@/components/DirectInput/DriftVolInput';
+import InputArea from '@/components/DirectInput/InputArea';
 
 type PoolContentProps = {
   poolId: string; // This is actually the poolAddress from the URL
@@ -25,7 +25,7 @@ export default function PoolContent({ poolId }: PoolContentProps) {
           <div className="flex-1 p-6 pb-80 overflow-y-auto">
             <div className="max-w-6xl mx-auto flex flex-col gap-6">
               <ChartWithStats />
-              <DriftVolInput />
+              <InputArea />
             </div>
           </div>
         </div>

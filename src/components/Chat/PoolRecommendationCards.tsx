@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { PoolData } from '@/types/ai';
 
-interface PoolRecommendationCardsProps {
+type PoolRecommendationCardsProps = {
   pools: PoolData[];
 }
 
@@ -13,10 +13,10 @@ export default function PoolRecommendationCards({ pools }: PoolRecommendationCar
   const router = useRouter();
   const [loadingPoolId, setLoadingPoolId] = useState<string | null>(null);
 
-  const handlePoolClick = async (poolAddress: string) => {
+  const handlePoolClick = (poolAddress: string) => {
     setLoadingPoolId(poolAddress);
     try {
-      await router.push(`/chat/${poolAddress}`);
+      router.push(`/chat/${poolAddress}`);
     } catch (error) {
       console.error('Navigation error:', error);
       setLoadingPoolId(null);

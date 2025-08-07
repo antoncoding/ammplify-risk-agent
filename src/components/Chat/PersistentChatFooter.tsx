@@ -10,12 +10,26 @@ import GenerativeUI, { GenerativeUIComponent } from './GenerativeUI';
 // Legacy message type - now using StructuredMessage from context
 
 export default function PersistentChatFooter() {
-  const { messages, context, poolAddress, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools } = useChatContext();
+  const { messages, context, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools } = useChatContext();
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [height, setHeight] = useState(320);
   const [isDragging, setIsDragging] = useState(false);
   const [generativeUI, setGenerativeUI] = useState<GenerativeUIComponent | null>(null);
+  const [loadingSuggestion, setLoadingSuggestion] = useState<string | null>(null);
+
+  const handleSuggestionClick = useCallback(async (suggestionId: string, message: string) => {
+    setLoadingSuggestion(suggestionId);
+    setGenerativeUI(null);
+    
+    try {
+      await sendMessage(message);
+    } catch (error) {
+      console.error('Failed to send suggestion message:', error);
+    } finally {
+      setLoadingSuggestion(null);
+    }
+  }, [sendMessage]);
   
   const resizeRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -39,35 +53,23 @@ export default function PersistentChatFooter() {
           {
             id: 'low-risk',
             label: 'Show me low-risk pools',
-            action: () => {
-              setInputValue('I want low-risk pools with stable returns');
-              setTimeout(() => void handleSendMessage(), 100);
-            },
+            action: () => void handleSuggestionClick('low-risk', 'I want low-risk pools with stable returns'),
             variant: 'primary'
           },
           {
             id: 'high-volume',
             label: 'High volume pools',
-            action: () => {
-              setInputValue('Show me pools with the highest trading volume');
-              setTimeout(() => void handleSendMessage(), 100);
-            }
+            action: () => void handleSuggestionClick('high-volume', 'Show me pools with the highest trading volume')
           },
           {
             id: 'eth-pairs',
             label: 'ETH trading pairs',
-            action: () => {
-              setInputValue('I want to see ETH trading pairs');
-              setTimeout(() => void handleSendMessage(), 100);
-            }
+            action: () => void handleSuggestionClick('eth-pairs', 'I want to see ETH trading pairs')
           },
           {
             id: 'low-fees',
             label: 'Lowest fee options',
-            action: () => {
-              setInputValue('Find pools with the lowest fees');
-              setTimeout(() => void handleSendMessage(), 100);
-            }
+            action: () => void handleSuggestionClick('low-fees', 'Find pools with the lowest fees')
           }
         ]
       };
@@ -81,27 +83,18 @@ export default function PersistentChatFooter() {
           {
             id: 'conservative',
             label: 'Conservative range (±10%)',
-            action: () => {
-              setInputValue('What would be a conservative price range with ±10% movement?');
-              setTimeout(() => void handleSendMessage(), 100);
-            },
+            action: () => void handleSuggestionClick('conservative', 'What would be a conservative price range with ±10% movement?'),
             variant: 'primary'
           },
           {
             id: 'moderate',
             label: 'Moderate range (±25%)',
-            action: () => {
-              setInputValue('Show me a moderate price range with ±25% movement');
-              setTimeout(() => void handleSendMessage(), 100);
-            }
+            action: () => void handleSuggestionClick('moderate', 'Show me a moderate price range with ±25% movement')
           },
           {
             id: 'aggressive',
             label: 'Wide range (±50%)',
-            action: () => {
-              setInputValue('What about a wide price range with ±50% movement?');
-              setTimeout(() => void handleSendMessage(), 100);
-            }
+            action: () => void handleSuggestionClick('aggressive', 'What about a wide price range with ±50% movement?')
           }
         ]
       };
@@ -109,7 +102,7 @@ export default function PersistentChatFooter() {
     } else {
       setGenerativeUI(null);
     }
-  }, [context, poolData, messages]);
+  }, [context, poolData, messages, handleSuggestionClick]);
 
   // Handle resize drag
   useEffect(() => {
@@ -287,7 +280,21 @@ export default function PersistentChatFooter() {
                 </div>
               )}
               
-              {context === 'pool-selection' && !loadingPools && poolData.length > 0 && (
+              {!!loadingSuggestion && (
+                <div className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/20 rounded-lg p-4">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-primary" />
+                    <span>AI is analyzing your request...</span>
+                  </div>
+                </div>
+              )}
+              
+              {context === 'pool-selection' && !loadingPools && poolData.length > 0 && !loadingSuggestion && (
                 <p className="text-xs text-muted-foreground">
                   Ready to analyze {poolData.length} pools
                 </p>
@@ -312,21 +319,27 @@ export default function PersistentChatFooter() {
                     {/* Display structured UI components from agent responses */}
                     {message.role === 'assistant' && message.structuredResponse?.uiComponents && (
                       <div className="mt-4 space-y-3">
-                        {message.structuredResponse.uiComponents.map((component, index) => (
+                        {message.structuredResponse.uiComponents.map((component, index) => component ? (
                           <GenerativeUI 
                             key={index}
                             component={component}
                             poolData={poolData}
-                            onAction={(message) => void handleSendMessage()}
+                            onAction={() => void handleSendMessage()}
                           />
-                        ))}
+                        ) : null
+                        )}
                       </div>
                     )}
                     
                     {/* Legacy support: Display pool recommendations for pool selection messages */}
-                    {message.role === 'assistant' && !message.structuredResponse && message.poolRanking && context === 'pool-selection' && (
-                      <PoolRecommendationCards pools={message.poolRanking} />
-                    )}
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {((message.role === 'assistant' && 
+                     !message.structuredResponse && 
+                     message.poolRanking && 
+                     context === 'pool-selection' && 
+                     Array.isArray(message.poolRanking)) ? (
+                      <PoolRecommendationCards pools={message.poolRanking as PoolData[]} />
+                    ) : null) as any}
                     
                     {/* Legacy support: Display tool results for range analysis messages */}
                     {message.role === 'assistant' && !message.structuredResponse && message.toolResults && context === 'range-analysis' && (
@@ -348,7 +361,7 @@ export default function PersistentChatFooter() {
                 </div>
               ))}
               
-              {isLoading && (
+              {(isLoading || !!loadingSuggestion) && (
                 <div className="flex justify-start">
                   <div className="bg-muted p-3 rounded-lg">
                     <div className="flex space-x-1">
@@ -366,10 +379,13 @@ export default function PersistentChatFooter() {
         </div>
 
         {/* Generative UI Suggestions Area */}
-        {generativeUI && (
+        {generativeUI && !isLoading && (
           <div className="border-t bg-muted/20">
             <div className="w-full max-w-4xl mx-auto px-6 py-4">
-              <GenerativeUI component={generativeUI} />
+              <GenerativeUI 
+                component={generativeUI} 
+                loadingSuggestion={loadingSuggestion} 
+              />
             </div>
           </div>
         )}
@@ -390,7 +406,7 @@ export default function PersistentChatFooter() {
                 maxHeight: '120px',
                 height: 'auto'
               }}
-              disabled={isLoading || (context === 'pool-selection' && loadingPools)}
+              disabled={isLoading || !!loadingSuggestion || (context === 'pool-selection' && loadingPools)}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = 'auto';
@@ -399,7 +415,7 @@ export default function PersistentChatFooter() {
             />
             <button
               onClick={handleSendClick}
-              disabled={!inputValue.trim() || isLoading || (context === 'pool-selection' && loadingPools)}
+              disabled={!inputValue.trim() || isLoading || !!loadingSuggestion || (context === 'pool-selection' && loadingPools)}
               className="p-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
               style={{ height: '44px' }}
             >
