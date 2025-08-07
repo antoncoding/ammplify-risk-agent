@@ -18,15 +18,5 @@
       "Bash(SKIP_ENV_VALIDATION=1 npx next build)"
     ],
     "deny": []
-  },
-  "UserPromptSubmit": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/UserPromptSubmit/append_ultrathink.py"
-        }
-      ]
-    }
-  ]
+  }
 }
