@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { PoolData } from '@/types/ai';
 
 // Type definitions for agent assistance
@@ -30,7 +30,7 @@ export type AgentInputSuggestions = {
 
 // Agent input helper interface
 export type AgentInputHelper = {
-  suggestVolatility: (poolData: PoolData, marketConditions?: MarketConditions) => Promise<AgentSuggestion>;
+  suggestVolatility: (poolData: PoolData) => Promise<AgentSuggestion>;
   suggestDrift: (poolData: PoolData, marketConditions?: MarketConditions) => Promise<AgentSuggestion>;
   suggestTimeHorizon: (userGoals?: UserGoals) => Promise<AgentSuggestion>;
   suggestAllInputs: (
@@ -42,7 +42,7 @@ export type AgentInputHelper = {
 
 // Mock implementation for development
 class MockAgentInputHelper implements AgentInputHelper {
-  async suggestVolatility(poolData: PoolData, marketConditions?: MarketConditions): Promise<AgentSuggestion> {
+  async suggestVolatility(poolData: PoolData): Promise<AgentSuggestion> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -98,7 +98,7 @@ class MockAgentInputHelper implements AgentInputHelper {
     return {
       value: suggestedValue,
       confidence: 0.9,
-      reasoning: `For ${userGoals?.investmentHorizon || 'medium-term'} investment goals, ${suggestedValue} days provides optimal prediction accuracy.`,
+      reasoning: `For ${userGoals?.investmentHorizon ?? 'medium-term'} investment goals, ${suggestedValue} days provides optimal prediction accuracy.`,
     };
   }
 
@@ -109,7 +109,7 @@ class MockAgentInputHelper implements AgentInputHelper {
   ): Promise<AgentInputSuggestions> {
     // Run all suggestions in parallel
     const [volatility, drift, timeHorizon] = await Promise.all([
-      this.suggestVolatility(poolData, marketConditions),
+      this.suggestVolatility(poolData),
       this.suggestDrift(poolData, marketConditions),
       this.suggestTimeHorizon(userGoals),
     ]);
@@ -126,18 +126,18 @@ class ProductionAgentInputHelper implements AgentInputHelper {
     this.baseUrl = baseUrl;
   }
 
-  async suggestVolatility(poolData: PoolData, marketConditions?: MarketConditions): Promise<AgentSuggestion> {
+  async suggestVolatility(poolData: PoolData): Promise<AgentSuggestion> {
     const response = await fetch(`${this.baseUrl}/volatility`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ poolData, marketConditions })
+      body: JSON.stringify({ poolData })
     });
     
     if (!response.ok) {
       throw new Error(`Failed to get volatility suggestion: ${response.status}`);
     }
     
-    return await response.json();
+    return await response.json() as AgentSuggestion;
   }
 
   async suggestDrift(poolData: PoolData, marketConditions?: MarketConditions): Promise<AgentSuggestion> {
@@ -151,7 +151,7 @@ class ProductionAgentInputHelper implements AgentInputHelper {
       throw new Error(`Failed to get drift suggestion: ${response.status}`);
     }
     
-    return await response.json();
+    return await response.json() as AgentSuggestion;
   }
 
   async suggestTimeHorizon(userGoals?: UserGoals): Promise<AgentSuggestion> {
@@ -165,7 +165,7 @@ class ProductionAgentInputHelper implements AgentInputHelper {
       throw new Error(`Failed to get time horizon suggestion: ${response.status}`);
     }
     
-    return await response.json();
+    return await response.json() as AgentSuggestion;
   }
 
   async suggestAllInputs(
@@ -183,7 +183,7 @@ class ProductionAgentInputHelper implements AgentInputHelper {
       throw new Error(`Failed to get input suggestions: ${response.status}`);
     }
     
-    return await response.json();
+    return await response.json() as AgentInputSuggestions;
   }
 }
 
@@ -192,19 +192,21 @@ export function useAgentInputHelper(useMockData: boolean = process.env.NODE_ENV 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const helper: AgentInputHelper = useMockData 
-    ? new MockAgentInputHelper()
-    : new ProductionAgentInputHelper();
+  const helper: AgentInputHelper = useMemo(() => 
+    useMockData 
+      ? new MockAgentInputHelper()
+      : new ProductionAgentInputHelper(),
+    [useMockData]
+  );
 
   const suggestVolatility = useCallback(async (
-    poolData: PoolData,
-    marketConditions?: MarketConditions
+    poolData: PoolData
   ) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const suggestion = await helper.suggestVolatility(poolData, marketConditions);
+      const suggestion = await helper.suggestVolatility(poolData);
       return suggestion;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get volatility suggestion';

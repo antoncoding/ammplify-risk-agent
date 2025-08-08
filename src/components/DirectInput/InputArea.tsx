@@ -1,9 +1,9 @@
 import React from 'react';
-import { PredictionForm } from '../forms/PredictionForm';
+import { LPAnalysisPanel } from '../forms/LPAnalysisPanel';
 
-// Simplified InputArea that uses the new composable PredictionForm
+// Simplified InputArea that uses the comprehensive LP Analysis Panel
 function InputArea(): JSX.Element {
-  return <PredictionForm />;
+  return <LPAnalysisPanel />;
 }
 
 export default InputArea;

@@ -171,15 +171,63 @@ function ChartWithStats() {
 
     // --- Prediction Range Visualization ---
     if (userPrediction.min > 0 && userPrediction.max > 0) {
-      // Draw min/max as price lines using line series
-      const minLine = chart.addSeries(LineSeries, { color: '#10B981', lineWidth: 2 });
-      minLine.setData(
-        dedupedData.map(({ time }) => ({ time, value: userPrediction.min }))
-      );
-      const maxLine = chart.addSeries(LineSeries, { color: '#EF4444', lineWidth: 2 });
-      maxLine.setData(
-        dedupedData.map(({ time }) => ({ time, value: userPrediction.max }))
-      );
+      // Create future data points for prediction bands
+      const lastPoint = dedupedData[dedupedData.length - 1];
+      if (lastPoint) {
+        const futurePoints = [];
+        const currentDate = new Date(lastPoint.time);
+        
+        // Create future time points based on prediction horizon
+        for (let i = 1; i <= userPrediction.timeHorizon; i += Math.ceil(userPrediction.timeHorizon / 10)) {
+          const futureDate = new Date(currentDate);
+          futureDate.setDate(futureDate.getDate() + i);
+          const timeStr = futureDate.toISOString().slice(0, 10);
+          futurePoints.push({ time: timeStr });
+        }
+        
+        // Add upper bound line (dashed)
+        const upperBoundSeries = chart.addSeries(LineSeries, { 
+          color: '#10B981', 
+          lineWidth: 2,
+          lineStyle: 2, // Dashed line
+          priceLineVisible: false
+        });
+        
+        // Add lower bound line (dashed)  
+        const lowerBoundSeries = chart.addSeries(LineSeries, { 
+          color: '#EF4444', 
+          lineWidth: 2,
+          lineStyle: 2, // Dashed line
+          priceLineVisible: false
+        });
+        
+        // Set data for bounds - start from current price and project to prediction range
+        const startPoint = { time: lastPoint.time, value: lastPoint.value };
+        const upperEndPoint = { time: futurePoints[futurePoints.length - 1]?.time || lastPoint.time, value: userPrediction.max };
+        const lowerEndPoint = { time: futurePoints[futurePoints.length - 1]?.time || lastPoint.time, value: userPrediction.min };
+        
+        upperBoundSeries.setData([startPoint, upperEndPoint]);
+        lowerBoundSeries.setData([startPoint, lowerEndPoint]);
+        
+        // Add price lines for the final prediction values
+        areaSeries.createPriceLine({
+          price: userPrediction.max,
+          color: '#10B981',
+          lineWidth: 1,
+          lineStyle: 2, // Dashed
+          axisLabelVisible: true,
+          title: `Upper Bound (${userPrediction.timeHorizon}d)`
+        });
+        
+        areaSeries.createPriceLine({
+          price: userPrediction.min,
+          color: '#EF4444',
+          lineWidth: 1,
+          lineStyle: 2, // Dashed
+          axisLabelVisible: true,
+          title: `Lower Bound (${userPrediction.timeHorizon}d)`
+        });
+      }
     }
     // --- Legend logic start ---
     const legend = document.createElement('div');

@@ -1,5 +1,10 @@
 import { useCallback } from 'react';
 
+export type ValidationResult = {
+  isValid: boolean;
+  error?: string;
+};
+
 // Validation functions for prediction inputs
 export function usePredictionInputValidation() {
   const validateVolatility = useCallback((value: number) => {
