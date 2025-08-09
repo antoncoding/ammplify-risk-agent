@@ -7,19 +7,34 @@ import { PoolData } from '@/types/ai';
 
 type PoolRecommendationCardsProps = {
   pools: PoolData[];
+  onPoolNavigation?: (poolId: string) => void; // Callback for pool navigation loading
 }
 
-export default function PoolRecommendationCards({ pools }: PoolRecommendationCardsProps) {
+export default function PoolRecommendationCards({ pools, onPoolNavigation }: PoolRecommendationCardsProps) {
   const router = useRouter();
   const [loadingPoolId, setLoadingPoolId] = useState<string | null>(null);
 
   const handlePoolClick = (poolAddress: string) => {
-    setLoadingPoolId(poolAddress);
-    try {
-      router.push(`/chat/${poolAddress}`);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      setLoadingPoolId(null);
+    if (onPoolNavigation) {
+      onPoolNavigation(poolAddress);
+      // Simulate loading and then navigate
+      setTimeout(() => {
+        try {
+          router.push(`/chat/${poolAddress}`);
+        } catch (error) {
+          console.error('Navigation error:', error);
+          onPoolNavigation(''); // Clear loading state on error
+        }
+      }, 800);
+    } else {
+      // Fallback to local loading state if no callback provided
+      setLoadingPoolId(poolAddress);
+      try {
+        router.push(`/chat/${poolAddress}`);
+      } catch (error) {
+        console.error('Navigation error:', error);
+        setLoadingPoolId(null);
+      }
     }
   };
 
@@ -33,20 +48,20 @@ export default function PoolRecommendationCards({ pools }: PoolRecommendationCar
     <div className="grid gap-3 mt-4">
       {pools.map((pool, index) => {
         const isRecommended = index === 0; // First pool is most recommended
-        const isLoading = loadingPoolId === pool.address;
+        const isLoadingLocal = !onPoolNavigation && loadingPoolId === pool.address;
         
         return (
           <button
             key={pool.address}
             onClick={() => handlePoolClick(pool.address)}
-            disabled={isLoading}
+            disabled={isLoadingLocal}
             className={`p-3 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-left border relative ${
               isRecommended
                 ? 'bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary'
                 : 'bg-muted/50 hover:bg-muted border-border text-foreground hover:border-primary/20'
-            } ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
+            } ${isLoadingLocal ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
-            {isLoading && (
+            {isLoadingLocal && (
               <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>

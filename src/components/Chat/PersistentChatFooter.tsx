@@ -6,20 +6,11 @@ import { useChatContext } from '@/contexts/ChatContext';
 import { PoolData } from '@/types/ai';
 import PoolRecommendationCards from './PoolRecommendationCards';
 import GenerativeUI, { GenerativeUIComponent } from './GenerativeUI';
+import LoadingOverlay from '@/components/shared/LoadingOverlay';
 
-// LoadingCard component matching MarketSelection style
-function LoadingCard({ title, message }: { title: string; message: string }) {
-  return (
-    <div className="bg-card rounded-lg shadow p-8 text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-      <div className="text-lg font-medium mb-2">{title}</div>
-      <div className="text-sm text-muted-foreground">{message}</div>
-    </div>
-  );
-}
 
 export default function PersistentChatFooter() {
-  const { messages, context, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools } = useChatContext();
+  const { messages, context, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools, setPageLoadingState } = useChatContext();
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [height, setHeight] = useState(320);
@@ -39,6 +30,21 @@ export default function PersistentChatFooter() {
       setLoadingSuggestion(null);
     }
   }, [sendMessage]);
+
+  // Global pool navigation handler - triggers loading in main page content area
+  const handlePoolNavigation = useCallback((poolId: string) => {
+    setPageLoadingState({ type: 'pool-navigation', poolId });
+    
+    // Simulate loading delay and navigate (same timing as MarketSelection)
+    setTimeout(() => {
+      try {
+        window.location.href = `/chat/${poolId}`;
+      } catch (error) {
+        console.error('Navigation error:', error);
+        setPageLoadingState(null); // Clear loading state on error
+      }
+    }, 800);
+  }, [setPageLoadingState]);
   
   const resizeRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -223,6 +229,7 @@ export default function PersistentChatFooter() {
     );
   }
 
+
   return (
     <div 
       className="fixed bottom-0 right-0 left-0 z-50 bg-background/95 backdrop-blur-sm border-t shadow-lg transition-all duration-300 ease-in-out"
@@ -279,16 +286,16 @@ export default function PersistentChatFooter() {
               </p>
               
               {context === 'pool-selection' && loadingPools && (
-                <LoadingCard
-                  title="Loading Pools"
-                  message="Fetching pool data and metrics..."
+                <LoadingOverlay
+                  loadingState={{ type: 'pools-loading' }}
+                  className="w-full max-w-md mx-auto"
                 />
               )}
               
               {!!loadingSuggestion && (
-                <LoadingCard
-                  title="AI Analyzing"
-                  message="Processing your request and generating insights..."
+                <LoadingOverlay
+                  loadingState={{ type: 'ai-analyzing' }}
+                  className="w-full max-w-md mx-auto"
                 />
               )}
               
@@ -323,6 +330,7 @@ export default function PersistentChatFooter() {
                             component={component}
                             poolData={poolData}
                             onAction={() => void handleSendMessage()}
+                            onPoolNavigation={handlePoolNavigation}
                           />
                         ) : null
                         )}
@@ -336,7 +344,10 @@ export default function PersistentChatFooter() {
                      message.poolRanking && 
                      context === 'pool-selection' && 
                      Array.isArray(message.poolRanking)) ? (
-                      <PoolRecommendationCards pools={message.poolRanking as PoolData[]} />
+                      <PoolRecommendationCards 
+                        pools={message.poolRanking as PoolData[]} 
+                        onPoolNavigation={handlePoolNavigation}
+                      />
                     ) : null) as any}
                     
                     {/* Legacy support: Display tool results for range analysis messages */}
@@ -359,12 +370,21 @@ export default function PersistentChatFooter() {
                 </div>
               ))}
               
-              {isLoading && (
-                <div className="flex justify-center">
-                  <LoadingCard
-                    title="AI Thinking"
-                    message="Generating response..."
-                  />
+              {(isLoading || !!loadingSuggestion) && (
+                <div className="flex justify-start">
+                  <div className="bg-muted p-3 rounded-lg max-w-[80%]">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-4 w-4 text-primary" />
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {loadingSuggestion ? 'Analyzing your request...' : 'Typing...'}
+                    </div>
+                  </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -379,7 +399,8 @@ export default function PersistentChatFooter() {
             <div className="w-full max-w-4xl mx-auto px-6 py-4">
               <GenerativeUI 
                 component={generativeUI} 
-                loadingSuggestion={loadingSuggestion} 
+                loadingSuggestion={loadingSuggestion}
+                onPoolNavigation={handlePoolNavigation}
               />
             </div>
           </div>

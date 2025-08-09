@@ -25,9 +25,10 @@ type GenerativeUIProps = {
   poolData?: PoolData[]; // Available pool data for lookups
   onAction?: (message: string) => void; // Callback for sending messages
   loadingSuggestion?: string | null; // ID of currently loading suggestion
+  onPoolNavigation?: (poolId: string) => void; // Callback for pool navigation loading
 }
 
-export default function GenerativeUI({ component, poolData = [], onAction, loadingSuggestion }: GenerativeUIProps) {
+export default function GenerativeUI({ component, poolData = [], onAction, loadingSuggestion, onPoolNavigation }: GenerativeUIProps) {
   const router = useRouter();
   const [loadingPoolId, setLoadingPoolId] = useState<string | null>(null);
 
@@ -38,12 +39,26 @@ export default function GenerativeUI({ component, poolData = [], onAction, loadi
   };
 
   const handlePoolNavigation = (poolId: string) => {
-    setLoadingPoolId(poolId);
-    try {
-      router.push(`/chat/${poolId}`);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      setLoadingPoolId(null);
+    if (onPoolNavigation) {
+      onPoolNavigation(poolId);
+      // Simulate loading and then navigate
+      setTimeout(() => {
+        try {
+          router.push(`/chat/${poolId}`);
+        } catch (error) {
+          console.error('Navigation error:', error);
+          onPoolNavigation(''); // Clear loading state on error
+        }
+      }, 800);
+    } else {
+      // Fallback to local loading state if no callback provided
+      setLoadingPoolId(poolId);
+      try {
+        router.push(`/chat/${poolId}`);
+      } catch (error) {
+        console.error('Navigation error:', error);
+        setLoadingPoolId(null);
+      }
     }
   };
 
@@ -70,20 +85,20 @@ export default function GenerativeUI({ component, poolData = [], onAction, loadi
             if (!pool) return null;
 
             const isTopRecommended = poolRec.rank === 1 || poolRec.isRecommended;
-            const isLoading = loadingPoolId === poolRec.id;
+            const isLoadingLocal = !onPoolNavigation && loadingPoolId === poolRec.id;
             
             return (
               <button
                 key={poolRec.id}
                 onClick={() => handlePoolNavigation(poolRec.id)}
-                disabled={isLoading}
+                disabled={isLoadingLocal}
                 className={`p-3 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-left border relative ${
                   isTopRecommended
                     ? 'bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary'
                     : 'bg-muted/50 hover:bg-muted border-border text-foreground hover:border-primary/20'
-                } ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                } ${isLoadingLocal ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
-                {isLoading && (
+                {isLoadingLocal && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { chatService, ChatProvider } from '@/services/chatService';
 import { PoolData } from '@/types/ai';
 import { StructuredMessage, AgentAPIResponse, UIComponent } from '@/types/agent-responses';
+import { LoadingOverlayType } from '@/components/shared/LoadingOverlay';
 
 type Message = StructuredMessage;
 
@@ -39,6 +40,9 @@ type ChatContextType = {
   poolData: PoolData[];
   loadingPools: boolean;
   refreshPools: () => Promise<void>;
+  // Global page loading state - allows footer to control main page content
+  pageLoadingState: LoadingOverlayType | null;
+  setPageLoadingState: React.Dispatch<React.SetStateAction<LoadingOverlayType | null>>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -50,6 +54,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [availableFunctions, setAvailableFunctions] = useState<ChatFunction[]>([]);
   const [poolData, setPoolData] = useState<PoolData[]>([]);
   const [loadingPools, setLoadingPools] = useState(false);
+  const [pageLoadingState, setPageLoadingState] = useState<LoadingOverlayType | null>(null);
   const pathname = usePathname();
 
   // Clear messages when route changes to start fresh threads
@@ -232,8 +237,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     sendMessage,
     poolData,
     loadingPools,
-    refreshPools
-  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, isCollapsed, setIsCollapsed, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage, poolData, loadingPools, refreshPools]);
+    refreshPools,
+    pageLoadingState,
+    setPageLoadingState
+  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, isCollapsed, setIsCollapsed, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage, poolData, loadingPools, refreshPools, pageLoadingState, setPageLoadingState]);
 
   return (
     <ChatContext.Provider value={contextValue}>
