@@ -14,6 +14,11 @@ export type PoolStats = {
   volatility: number;
   startDate: string;
   endDate: string;
+  // Fee growth data for real fee calculations
+  currentFeeGrowthGlobal0X128: string;
+  currentFeeGrowthGlobal1X128: string;
+  historicalFeeGrowth0X128: string[];
+  historicalFeeGrowth1X128: string[];
 };
 
 export type PoolData = {
@@ -69,6 +74,8 @@ type PoolDayData = {
   low: string;
   open: string;
   close: string;
+  feeGrowthGlobal0X128: string;
+  feeGrowthGlobal1X128: string;
 };
 
 type GraphQLResponse = {
@@ -100,7 +107,11 @@ export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' 
     growth: 0,
     volatility: 0,
     startDate: '',
-    endDate: ''
+    endDate: '',
+    currentFeeGrowthGlobal0X128: '0',
+    currentFeeGrowthGlobal1X128: '0',
+    historicalFeeGrowth0X128: [],
+    historicalFeeGrowth1X128: []
   });
   const [poolData, setPoolData] = useState<PoolData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -197,6 +208,12 @@ export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' 
           const startDate = new Date(filteredData[filteredData.length - 1]?.date * 1000).toLocaleDateString();
           const endDate = new Date(filteredData[0]?.date * 1000).toLocaleDateString();
 
+          // Extract fee growth data
+          const currentFeeGrowthGlobal0X128 = filteredData[0]?.feeGrowthGlobal0X128 || '0';
+          const currentFeeGrowthGlobal1X128 = filteredData[0]?.feeGrowthGlobal1X128 || '0';
+          const historicalFeeGrowth0X128 = filteredData.map(d => d.feeGrowthGlobal0X128 || '0');
+          const historicalFeeGrowth1X128 = filteredData.map(d => d.feeGrowthGlobal1X128 || '0');
+
           setStats({
             volume,
             fees,
@@ -206,7 +223,11 @@ export function usePoolStats({ poolAddress, apiKey, lookbackPeriod = '3 months' 
             growth,
             volatility,
             startDate,
-            endDate
+            endDate,
+            currentFeeGrowthGlobal0X128,
+            currentFeeGrowthGlobal1X128,
+            historicalFeeGrowth0X128,
+            historicalFeeGrowth1X128
           });
         }
       } catch (err) {

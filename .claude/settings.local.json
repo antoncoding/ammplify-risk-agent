@@ -16,7 +16,10 @@
       "Bash(pnpm run lint:*)",
       "Bash(npx next:*)",
       "Bash(SKIP_ENV_VALIDATION=1 npx next build)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(true)",
+      "Bash(timeout 30 pnpm build)",
+      "Bash(pnpm exec tsc:*)"
     ],
     "deny": []
   }

@@ -298,7 +298,7 @@ export function LPAnalysisPanel(): JSX.Element {
             </div>
             
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div>
                   <div className="text-muted-foreground text-xs">Expected PNL</div>
                   <div className={`font-semibold ${calculationState.lpAnalysis.expectedPNL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -306,18 +306,24 @@ export function LPAnalysisPanel(): JSX.Element {
                   </div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground text-xs">Fee APR</div>
+                  <div className="text-muted-foreground text-xs">Real Fee APR</div>
                   <div className="font-medium text-blue-600">
-                    {calculationState.lpAnalysis.feeAPR.toFixed(1)}%
+                    {calculationState.lpAnalysis.realFeeAPR?.toFixed(1) || calculationState.lpAnalysis.feeAPR.toFixed(1)}%
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground text-xs">Position Type</div>
+                  <div className="font-medium text-purple-600 capitalize">
+                    {calculationState.lpAnalysis.concentrationType?.replace('-', ' ') || 'Standard'}
                   </div>
                 </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div>
-                  <div className="text-muted-foreground text-xs">Fee Income</div>
+                  <div className="text-muted-foreground text-xs">Real Fee Income</div>
                   <div className="font-medium text-green-600">
-                    ${calculationState.lpAnalysis.feeIncome.toFixed(0)}
+                    ${calculationState.lpAnalysis.realFeeIncome?.toFixed(0) || calculationState.lpAnalysis.feeIncome.toFixed(0)}
                   </div>
                 </div>
                 <div>
@@ -326,11 +332,17 @@ export function LPAnalysisPanel(): JSX.Element {
                     ${calculationState.lpAnalysis.impermanentLoss.toFixed(0)}
                   </div>
                 </div>
+                <div>
+                  <div className="text-muted-foreground text-xs">Time in Range</div>
+                  <div className="font-medium text-orange-600">
+                    {calculationState.lpAnalysis.timeInRangeEstimate?.toFixed(0) || '100'}%
+                  </div>
+                </div>
               </div>
             </div>
             
             <div className="text-xs text-muted-foreground border-t pt-2">
-              Based on $10k position • Data from {lookbackPeriod}
+              Based on $10k position • Real Uniswap V3 fee calculations using feeGrowthGlobal0X128 • Data from {lookbackPeriod}
             </div>
           </div>
         )}

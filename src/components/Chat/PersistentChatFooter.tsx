@@ -7,7 +7,16 @@ import { PoolData } from '@/types/ai';
 import PoolRecommendationCards from './PoolRecommendationCards';
 import GenerativeUI, { GenerativeUIComponent } from './GenerativeUI';
 
-// Legacy message type - now using StructuredMessage from context
+// LoadingCard component matching MarketSelection style
+function LoadingCard({ title, message }: { title: string; message: string }) {
+  return (
+    <div className="bg-card rounded-lg shadow p-8 text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+      <div className="text-lg font-medium mb-2">{title}</div>
+      <div className="text-sm text-muted-foreground">{message}</div>
+    </div>
+  );
+}
 
 export default function PersistentChatFooter() {
   const { messages, context, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools } = useChatContext();
@@ -270,26 +279,17 @@ export default function PersistentChatFooter() {
               </p>
               
               {context === 'pool-selection' && loadingPools && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                  <span className="ml-2">Loading pool data...</span>
-                </div>
+                <LoadingCard
+                  title="Loading Pools"
+                  message="Fetching pool data and metrics..."
+                />
               )}
               
               {!!loadingSuggestion && (
-                <div className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/20 rounded-lg p-4">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Bot className="h-4 w-4 text-primary" />
-                    <span>AI is analyzing your request...</span>
-                  </div>
-                </div>
+                <LoadingCard
+                  title="AI Analyzing"
+                  message="Processing your request and generating insights..."
+                />
               )}
               
               {context === 'pool-selection' && !loadingPools && poolData.length > 0 && !loadingSuggestion && (
@@ -359,15 +359,12 @@ export default function PersistentChatFooter() {
                 </div>
               ))}
               
-              {(isLoading || !!loadingSuggestion) && (
-                <div className="flex justify-start">
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                    </div>
-                  </div>
+              {isLoading && (
+                <div className="flex justify-center">
+                  <LoadingCard
+                    title="AI Thinking"
+                    message="Generating response..."
+                  />
                 </div>
               )}
               <div ref={messagesEndRef} />

@@ -36,6 +36,8 @@ export function poolDataQuery(poolAddress: string) {
         low
         open
         close
+        feeGrowthGlobal0X128
+        feeGrowthGlobal1X128
       }
     }
   }`;
@@ -61,6 +63,8 @@ export function poolsDataQuery(poolIds: string[]) {
         volumeUSD
         volumeToken0
         volumeToken1
+        feeGrowthGlobal0X128
+        feeGrowthGlobal1X128
       }
       poolDayData(first: 2, orderBy: date, orderDirection: desc) {
         volumeUSD
@@ -68,6 +72,8 @@ export function poolsDataQuery(poolIds: string[]) {
         volumeToken1
         date
         feesUSD
+        feeGrowthGlobal0X128
+        feeGrowthGlobal1X128
       }
     }
   }`;
