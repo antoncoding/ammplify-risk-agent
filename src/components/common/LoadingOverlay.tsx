@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TokenIcon } from '@/components/TokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 import { getAllPoolsWithTokens } from '@/config/pools';
 
 // Generic loading overlay types

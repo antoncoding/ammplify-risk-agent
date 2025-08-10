@@ -4,9 +4,9 @@ import React from 'react';
 import Header from '@/components/layout/header/Header';
 import { ChartStateProvider } from '@/contexts/ChartStateContext';
 import { PoolProvider } from '@/contexts/PoolContext';
-import ChartWithStats from '@/components/Chart/ChartWithStats';
-import InputArea from '@/components/DirectInput/InputArea';
-import LoadingOverlay from '@/components/shared/LoadingOverlay';
+import ChartWithStats from '@/components/charts/ChartWithStats';
+import { LPAnalysisPanel } from '@/components/analysis/LPAnalysisPanel';
+import LoadingOverlay from '@/components/common/LoadingOverlay';
 import { useChatContext } from '@/contexts/ChatContext';
 
 type PoolContentProps = {
@@ -31,7 +31,7 @@ export default function PoolContent({ poolAddress }: PoolContentProps) {
             ) : (
               <div className="max-w-6xl mx-auto flex flex-col gap-6">
                 <ChartWithStats />
-                <InputArea />
+                <LPAnalysisPanel />
               </div>
             )}
           </div>

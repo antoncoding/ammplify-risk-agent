@@ -10,7 +10,7 @@ import { parsePoolAddress } from '@/utils/poolUtils';
 import PoolMetrics from './PoolMetrics';
 import { createChart, AreaSeries, LineSeries } from 'lightweight-charts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TokenIcon } from '@/components/TokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 
 // Helper function to convert lookback period to days
 const getDaysFromLookbackPeriod = (period: LookbackPeriod): number => {

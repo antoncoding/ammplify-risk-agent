@@ -1,6 +1,6 @@
 import './global.css';
 
-import GoogleAnalytics from '@/components/GoogleAnalytics/GoogleAnalytics';
+import GoogleAnalytics from '@/components/providers/GoogleAnalytics';
 import { ClientProviders } from '@/components/providers/ClientProviders';
 import OnchainProviders from '@/OnchainProviders';
 import { ChatProvider } from '@/contexts/ChatContext';

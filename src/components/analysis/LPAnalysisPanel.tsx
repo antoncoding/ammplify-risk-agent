@@ -6,7 +6,7 @@ import { useChatContext } from '@/contexts/ChatContext';
 import { usePredictionInputValidation } from '@/hooks/useInputValidation';
 import { useAgentInputHelper } from '@/hooks/useAgentInputHelper';
 import { usePoolStats } from '@/hooks/usePoolStats';
-import { FinancialInput } from './inputs/FinancialInput';
+import { FinancialInput } from '@/components/forms/inputs/FinancialInput';
 import { analyzeLiquidityProviderExpectedPNL, type LPAnalysisResult } from '@/utils/liquidityProviderAnalysis';
 
 // Type definitions for better maintainability

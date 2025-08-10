@@ -1,4 +1,4 @@
-import { TxHashDisplay } from '../TxHashDisplay';
+import { TxHashDisplay } from './TxHashDisplay';
 
 export function StyledToast({ title, message }: { title: string; message?: string }) {
   return (

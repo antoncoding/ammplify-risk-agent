@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { chatService, ChatProvider } from '@/services/chatService';
 import { PoolData } from '@/types/ai';
 import { StructuredMessage, AgentAPIResponse, UIComponent } from '@/types/agent-responses';
-import { LoadingOverlayType } from '@/components/shared/LoadingOverlay';
+import { LoadingOverlayType } from '@/components/common/LoadingOverlay';
 
 type Message = StructuredMessage;
 

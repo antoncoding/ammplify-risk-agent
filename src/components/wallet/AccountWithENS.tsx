@@ -1,5 +1,5 @@
 import { Address } from 'viem';
-import { Avatar } from '@/components/Avatar/Avatar';
+import { Avatar } from '@/components/common/Avatar';
 import { getSlicedAddress } from '@/utils/address';
 import { Name } from '../common/Name';
 
@@ -15,9 +15,9 @@ function AccountWithENS({ address }: AccountWithENSProps) {
         <div className="font-inter text-sm font-medium text-primary">
           <Name address={address} />
         </div>
-        <span className="font-inter text-xs font-medium text-zinc-400">
+        <div className="font-mono text-xs text-muted-foreground">
           {getSlicedAddress(address)}
-        </span>
+        </div>
       </div>
     </div>
   );

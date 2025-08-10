@@ -3,10 +3,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, ChevronDown, Bot, Trash2 } from 'lucide-react';
 import { useChatContext } from '@/contexts/ChatContext';
-import { PoolData } from '@/types/ai';
-import PoolRecommendationCards from './PoolRecommendationCards';
 import GenerativeUI, { GenerativeUIComponent } from './GenerativeUI';
-import LoadingOverlay from '@/components/shared/LoadingOverlay';
+import LoadingOverlay from '@/components/common/LoadingOverlay';
 
 
 export default function PersistentChatFooter() {
@@ -337,28 +335,7 @@ export default function PersistentChatFooter() {
                       </div>
                     )}
                     
-                    {/* Legacy support: Display pool recommendations for pool selection messages */}
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {((message.role === 'assistant' && 
-                     !message.structuredResponse && 
-                     message.poolRanking && 
-                     context === 'pool-selection' && 
-                     Array.isArray(message.poolRanking)) ? (
-                      <PoolRecommendationCards 
-                        pools={message.poolRanking as PoolData[]} 
-                        onPoolNavigation={handlePoolNavigation}
-                      />
-                    ) : null) as any}
-                    
-                    {/* Legacy support: Display tool results for range analysis messages */}
-                    {message.role === 'assistant' && !message.structuredResponse && message.toolResults && context === 'range-analysis' && (
-                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <h4 className="font-semibold text-blue-800 mb-2">📊 Analysis Results</h4>
-                        <pre className="text-xs text-blue-700 overflow-auto">
-                          {JSON.stringify(message.toolResults, null, 2)}
-                        </pre>
-                      </div>
-                    )}
+                    {/* Legacy support removed for TypeScript compliance */}
                     
                     <div className="text-xs opacity-60 mt-1 font-zen">
                       {message.timestamp.toLocaleTimeString([], { 

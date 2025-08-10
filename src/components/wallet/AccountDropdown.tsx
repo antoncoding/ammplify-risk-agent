@@ -11,8 +11,8 @@ import {
 import { ExitIcon, ExternalLinkIcon, CopyIcon } from '@radix-ui/react-icons';
 import { clsx } from 'clsx';
 import { useAccount, useDisconnect } from 'wagmi';
-import AccountWithENS from '@/components/Account/AccountWithENS';
-import { Avatar } from '@/components/Avatar/Avatar';
+import AccountWithENS from './AccountWithENS';
+import { Avatar } from '@/components/common/Avatar';
 import { useStyledToast } from '@/hooks/useStyledToast';
 import { getExplorerURL } from '@/utils/external';
 

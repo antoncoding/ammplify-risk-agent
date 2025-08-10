@@ -9,12 +9,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getAllPoolsWithTokens, formatFeeTier } from '@/config/pools';
-import { TokenIcon } from '@/components/TokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 import { useChatContext } from '@/contexts/ChatContext';
 import { PoolData } from '@/types/ai';
 import { formatCurrency } from '@/utils/poolUtils';
 
-export default function MarketSelection() {
+export default function PoolSelector() {
   const router = useRouter();
   const { setIsCollapsed } = useChatContext();
   const [selectedMarket, setSelectedMarket] = useState<string>('');
@@ -53,7 +53,7 @@ export default function MarketSelection() {
     
     // Simulate loading and then navigate
     void setTimeout(() => {
-      router.push(`/chat/${poolAddress}`);
+      router.push(`/analysis/${poolAddress}`);
     }, 800);
   };
 

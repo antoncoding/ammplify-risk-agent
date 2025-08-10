@@ -2,8 +2,8 @@
 
 import React from 'react';
 import Header from '@/components/layout/header/Header';
-import MarketSelection from '@/components/MarketSelection/MarketSelection';
-import LoadingOverlay from '@/components/shared/LoadingOverlay';
+import PoolSelector from '@/components/analysis/PoolSelector';
+import LoadingOverlay from '@/components/common/LoadingOverlay';
 import { useChatContext } from '@/contexts/ChatContext';
 
 export default function Content() {
@@ -18,7 +18,7 @@ export default function Content() {
         {pageLoadingState ? (
           <LoadingOverlay loadingState={pageLoadingState} />
         ) : (
-          <MarketSelection />
+          <PoolSelector />
         )}
       </div>
     </div>

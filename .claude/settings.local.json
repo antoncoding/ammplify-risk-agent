@@ -19,7 +19,10 @@
       "Bash(mv:*)",
       "Bash(true)",
       "Bash(timeout 30 pnpm build)",
-      "Bash(pnpm exec tsc:*)"
+      "Bash(pnpm exec tsc:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm run:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

@@ -2,8 +2,8 @@ import Content from './content';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Chat',
-  description: 'Chat with the Ammplify Risk Agent and view live price charts.',
+  title: 'Pool Analysis - Ammplify Risk Agent',
+  description: 'Select and analyze liquidity pools with advanced risk assessment tools.',
 };
 
 export default function Page() {

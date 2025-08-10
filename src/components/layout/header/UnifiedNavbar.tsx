@@ -17,7 +17,7 @@ import { FaRegMoon } from 'react-icons/fa';
 import { FiSettings } from 'react-icons/fi';
 import { LuSunMedium } from 'react-icons/lu';
 import { RiBookLine, RiDiscordFill, RiGithubFill } from 'react-icons/ri';
-import AccountConnect from './AccountConnect';
+import AccountConnect from '@/components/wallet/AccountConnect';
 
 import logo from '../../../../public/icon.png';
 
