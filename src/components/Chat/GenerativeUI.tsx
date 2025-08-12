@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { UIComponent, PoolRecommendationComponent, ButtonListComponent } from '@/types/agent-responses';
 import { PoolData } from '@/types/ai';
+import { getPoolWithTokens } from '@/config/pools';
+import { TokenIcon } from '@/components/common/TokenIcon';
 
 // Legacy component type for backward compatibility
 export type GenerativeUIAction = {
@@ -40,25 +42,19 @@ export default function GenerativeUI({ component, poolData = [], onAction, loadi
 
   const handlePoolNavigation = (poolId: string) => {
     if (onPoolNavigation) {
+      // Let the parent component handle navigation and loading state
       onPoolNavigation(poolId);
-      // Simulate loading and then navigate
-      setTimeout(() => {
-        try {
-          router.push(`/chat/${poolId}`);
-        } catch (error) {
-          console.error('Navigation error:', error);
-          onPoolNavigation(''); // Clear loading state on error
-        }
-      }, 800);
     } else {
       // Fallback to local loading state if no callback provided
       setLoadingPoolId(poolId);
-      try {
-        router.push(`/chat/${poolId}`);
-      } catch (error) {
-        console.error('Navigation error:', error);
-        setLoadingPoolId(null);
-      }
+      setTimeout(() => {
+        try {
+          router.push(`/analysis/${poolId}`);
+        } catch (error) {
+          console.error('Navigation error:', error);
+          setLoadingPoolId(null);
+        }
+      }, 800);
     }
   };
 
@@ -105,6 +101,25 @@ export default function GenerativeUI({ component, poolData = [], onAction, loadi
                 )}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
+                    {(() => {
+                      const poolWithTokens = getPoolWithTokens(pool.address);
+                      return poolWithTokens ? (
+                        <div className="flex items-center gap-1">
+                          <TokenIcon 
+                            address={poolWithTokens.token0Config.address} 
+                            chainId={1} 
+                            width={20} 
+                            height={20}
+                          />
+                          <TokenIcon 
+                            address={poolWithTokens.token1Config.address} 
+                            chainId={1} 
+                            width={20} 
+                            height={20}
+                          />
+                        </div>
+                      ) : null;
+                    })()}
                     <span className="font-medium">{pool.token0}/{pool.token1}</span>
                     {isTopRecommended && (
                       <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full font-medium">

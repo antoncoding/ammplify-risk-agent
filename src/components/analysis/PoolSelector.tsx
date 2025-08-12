@@ -12,11 +12,12 @@ import { getAllPoolsWithTokens, formatFeeTier } from '@/config/pools';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import { useChatContext } from '@/contexts/ChatContext';
 import { PoolData } from '@/types/ai';
+import { StructuredMessage } from '@/types/agent-responses';
 import { formatCurrency } from '@/utils/poolUtils';
 
 export default function PoolSelector() {
   const router = useRouter();
-  const { setIsCollapsed } = useChatContext();
+  const { setIsCollapsed, setIsVisible, setMessages } = useChatContext();
   const [selectedMarket, setSelectedMarket] = useState<string>('');
   const [isLoading, setIsLoading] = useState<string>('');
   const [poolMetrics, setPoolMetrics] = useState<Record<string, PoolData>>({});
@@ -58,7 +59,42 @@ export default function PoolSelector() {
   };
 
   const handleAskAgent = () => {
+    // Make sure chat is visible and expanded
+    setIsVisible(true);
     setIsCollapsed(false);
+    
+    // Add an initial assistant message with sample questions
+    const assistantMessage: StructuredMessage = {
+      id: `agent-welcome-${Date.now()}`,
+      role: 'assistant',
+      content: "I'll help you find the best liquidity pools! Choose one of these options or tell me about your specific preferences:",
+      timestamp: new Date(),
+      structuredResponse: {
+        text: "I'll help you find the best liquidity pools! Choose one of these options or tell me about your specific preferences:",
+        uiComponents: [{
+          type: 'buttonList' as const,
+          title: '🎯 What type of pool are you looking for?',
+          description: 'Select an option below or describe your own criteria',
+          buttons: [
+            {
+              id: 'safe-stable',
+              label: '🛡️ Safe & Stable Returns',
+              action: 'I want safe pools with stable returns and low risk of impermanent loss',
+              variant: 'primary' as const
+            },
+            {
+              id: 'high-yield',
+              label: '🚀 High Yield Opportunities', 
+              action: 'Show me high-yield pools with good APY, I can handle some risk',
+              variant: 'primary' as const
+            },
+          ]
+        }]
+      }
+    };
+
+    // Add the message to the chat
+    setMessages(prev => [...prev, assistantMessage]);
   };
 
   if (isLoading) {

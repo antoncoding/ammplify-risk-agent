@@ -26,6 +26,8 @@ type ChatContextType = {
   setIsVisible: React.Dispatch<React.SetStateAction<boolean>>;
   isCollapsed: boolean;
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  // Loading state for AI agent
+  isAgentLoading: boolean;
   // Function invocation system for chat
   availableFunctions: ChatFunction[];
   registerFunction: (func: ChatFunction) => void;
@@ -51,6 +53,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isVisible, setIsVisible] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isAgentLoading, setIsAgentLoading] = useState(false);
   const [availableFunctions, setAvailableFunctions] = useState<ChatFunction[]>([]);
   const [poolData, setPoolData] = useState<PoolData[]>([]);
   const [loadingPools, setLoadingPools] = useState(false);
@@ -64,9 +67,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Determine context and poolAddress based on current route
   const getContextFromPath = () => {
-    if (pathname === '/chat') {
+    if (pathname === '/analysis') {
       return { context: 'pool-selection' as const, poolAddress: undefined };
-    } else if (pathname?.startsWith('/chat/')) {
+    } else if (pathname?.startsWith('/analysis/')) {
       const poolAddress = pathname.split('/')[2];
       return { context: 'range-analysis' as const, poolAddress };
     }
@@ -75,9 +78,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const { context, poolAddress } = getContextFromPath();
 
-  // Show chat on chat pages, start collapsed by default
+  // Show chat on analysis pages, start collapsed by default
   useEffect(() => {
-    const shouldShow = pathname === '/chat' || pathname?.startsWith('/chat/');
+    const shouldShow = pathname === '/analysis' || pathname?.startsWith('/analysis/');
     setIsVisible(shouldShow);
     if (shouldShow) {
       setIsCollapsed(true);
@@ -160,6 +163,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setIsAgentLoading(true);
 
     try {
       let apiResponse: Response;
@@ -215,6 +219,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       };
 
       setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsAgentLoading(false);
     }
   }, [context, poolAddress, poolData]);
 
@@ -228,6 +234,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setIsVisible,
     isCollapsed,
     setIsCollapsed,
+    isAgentLoading,
     availableFunctions,
     registerFunction,
     unregisterFunction,
@@ -240,7 +247,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     refreshPools,
     pageLoadingState,
     setPageLoadingState
-  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, isCollapsed, setIsCollapsed, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage, poolData, loadingPools, refreshPools, pageLoadingState, setPageLoadingState]);
+  }), [messages, setMessages, context, poolAddress, isVisible, setIsVisible, isCollapsed, setIsCollapsed, isAgentLoading, availableFunctions, registerFunction, unregisterFunction, executeFunction, clearChatHistory, setChatProvider, sendMessage, poolData, loadingPools, refreshPools, pageLoadingState, setPageLoadingState]);
 
   return (
     <ChatContext.Provider value={contextValue}>

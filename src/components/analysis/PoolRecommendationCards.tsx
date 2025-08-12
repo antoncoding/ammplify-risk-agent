@@ -20,7 +20,7 @@ export default function PoolRecommendationCards({ pools, onPoolNavigation }: Poo
       // Simulate loading and then navigate
       setTimeout(() => {
         try {
-          router.push(`/chat/${poolAddress}`);
+          router.push(`/analysis/${poolAddress}`);
         } catch (error) {
           console.error('Navigation error:', error);
           onPoolNavigation(''); // Clear loading state on error
@@ -30,7 +30,7 @@ export default function PoolRecommendationCards({ pools, onPoolNavigation }: Poo
       // Fallback to local loading state if no callback provided
       setLoadingPoolId(poolAddress);
       try {
-        router.push(`/chat/${poolAddress}`);
+        router.push(`/analysis/${poolAddress}`);
       } catch (error) {
         console.error('Navigation error:', error);
         setLoadingPoolId(null);

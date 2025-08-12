@@ -5,12 +5,14 @@ import { Send, ChevronDown, Bot, Trash2 } from 'lucide-react';
 import { useChatContext } from '@/contexts/ChatContext';
 import GenerativeUI, { GenerativeUIComponent } from './GenerativeUI';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
+import { TokenIcon } from '@/components/common/TokenIcon';
+import { getPoolWithTokens } from '@/config/pools';
+import { formatCurrency } from '@/utils/poolUtils';
 
 
 export default function PersistentChatFooter() {
-  const { messages, context, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools, setPageLoadingState } = useChatContext();
+  const { messages, context, isVisible, isCollapsed, setIsCollapsed, clearChatHistory, sendMessage, poolData, loadingPools, setPageLoadingState, isAgentLoading } = useChatContext();
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [height, setHeight] = useState(320);
   const [isDragging, setIsDragging] = useState(false);
   const [generativeUI, setGenerativeUI] = useState<GenerativeUIComponent | null>(null);
@@ -36,7 +38,7 @@ export default function PersistentChatFooter() {
     // Simulate loading delay and navigate (same timing as MarketSelection)
     setTimeout(() => {
       try {
-        window.location.href = `/chat/${poolId}`;
+        window.location.href = `/analysis/${poolId}`;
       } catch (error) {
         console.error('Navigation error:', error);
         setPageLoadingState(null); // Clear loading state on error
@@ -159,7 +161,7 @@ export default function PersistentChatFooter() {
   };
 
   const handleSendMessage = useCallback(async () => {
-    if (!inputValue.trim() || isLoading) return;
+    if (!inputValue.trim() || isAgentLoading) return;
     
     // Check if we have pool data for pool selection context
     if (context === 'pool-selection' && (!poolData || poolData.length === 0)) {
@@ -169,7 +171,6 @@ export default function PersistentChatFooter() {
     
     const messageToSend = inputValue;
     setInputValue('');
-    setIsLoading(true);
 
     try {
       await sendMessage(messageToSend);
@@ -177,10 +178,8 @@ export default function PersistentChatFooter() {
       setGenerativeUI(null);
     } catch (error) {
       console.error('Failed to send message:', error);
-    } finally {
-      setIsLoading(false);
     }
-  }, [inputValue, isLoading, context, poolData, sendMessage]);
+  }, [inputValue, isAgentLoading, context, poolData, sendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -327,7 +326,7 @@ export default function PersistentChatFooter() {
                             key={index}
                             component={component}
                             poolData={poolData}
-                            onAction={() => void handleSendMessage()}
+                            onAction={(message) => void sendMessage(message)}
                             onPoolNavigation={handlePoolNavigation}
                           />
                         ) : null
@@ -335,7 +334,70 @@ export default function PersistentChatFooter() {
                       </div>
                     )}
                     
-                    {/* Legacy support removed for TypeScript compliance */}
+                    {/* Display pool rankings as clickable buttons */}
+                    {message.role === 'assistant' && message.poolRanking && message.poolRanking.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          💡 Recommended Pools:
+                        </div>
+                        <div className="grid gap-3">
+                          {message.poolRanking.map((pool, index) => {
+                            const poolData = pool as import('@/types/ai').PoolData;
+                            const poolWithTokens = getPoolWithTokens(poolData.address);
+                            const isTopRecommended = index === 0;
+                            
+                            return (
+                              <button
+                                key={poolData.address}
+                                onClick={() => handlePoolNavigation(poolData.address)}
+                                className={`p-3 rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-left border ${
+                                  isTopRecommended
+                                    ? 'bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary'
+                                    : 'bg-muted/50 hover:bg-muted border-border text-foreground hover:border-primary/20'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {poolWithTokens && (
+                                      <div className="flex items-center gap-1">
+                                        <TokenIcon 
+                                          address={poolWithTokens.token0Config.address} 
+                                          chainId={1} 
+                                          width={20} 
+                                          height={20}
+                                        />
+                                        <TokenIcon 
+                                          address={poolWithTokens.token1Config.address} 
+                                          chainId={1} 
+                                          width={20} 
+                                          height={20}
+                                        />
+                                      </div>
+                                    )}
+                                    <span className="font-medium">{poolData.token0}/{poolData.token1}</span>
+                                    {isTopRecommended && (
+                                      <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full font-medium">
+                                        ⭐ Recommended
+                                      </span>
+                                    )}
+                                    <span className="text-xs text-muted-foreground">
+                                      #{index + 1}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {formatCurrency(poolData.volume24h)} Vol
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                  <span>Fees: {formatCurrency(poolData.fees24h)}</span>
+                                  <span>Volatility: {poolData.volatility.toFixed(1)}%</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="text-xs opacity-60 mt-1 font-zen">
                       {message.timestamp.toLocaleTimeString([], { 
@@ -347,7 +409,7 @@ export default function PersistentChatFooter() {
                 </div>
               ))}
               
-              {(isLoading || !!loadingSuggestion) && (
+              {(isAgentLoading || !!loadingSuggestion) && (
                 <div className="flex justify-start">
                   <div className="bg-muted p-3 rounded-lg max-w-[80%]">
                     <div className="flex items-center gap-2">
@@ -371,7 +433,7 @@ export default function PersistentChatFooter() {
         </div>
 
         {/* Generative UI Suggestions Area */}
-        {generativeUI && !isLoading && (
+        {generativeUI && !isAgentLoading && (
           <div className="border-t bg-muted/20">
             <div className="w-full max-w-4xl mx-auto px-6 py-4">
               <GenerativeUI 
@@ -399,7 +461,7 @@ export default function PersistentChatFooter() {
                 maxHeight: '120px',
                 height: 'auto'
               }}
-              disabled={isLoading || !!loadingSuggestion || (context === 'pool-selection' && loadingPools)}
+              disabled={isAgentLoading || !!loadingSuggestion || (context === 'pool-selection' && loadingPools)}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = 'auto';
@@ -408,7 +470,7 @@ export default function PersistentChatFooter() {
             />
             <button
               onClick={handleSendClick}
-              disabled={!inputValue.trim() || isLoading || !!loadingSuggestion || (context === 'pool-selection' && loadingPools)}
+              disabled={!inputValue.trim() || isAgentLoading || !!loadingSuggestion || (context === 'pool-selection' && loadingPools)}
               className="p-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
               style={{ height: '44px' }}
             >

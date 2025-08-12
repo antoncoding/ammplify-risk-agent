@@ -1,6 +1,8 @@
 // Structured Agent Response System
 // This defines the architecture for AI agents to return structured data with UI components
 
+import { PoolData } from './ai';
+
 // Base structure for all agent responses
 export type AgentResponse = {
   text: string; // Main text response that's always shown
@@ -64,7 +66,7 @@ export type StructuredMessage = {
   timestamp: Date;
   structuredResponse?: AgentResponse; // The full structured response
   // Legacy support
-  poolRanking?: unknown[];
+  poolRanking?: PoolData[];
   toolResults?: unknown;
 }
 

@@ -14,12 +14,21 @@ const poolSelectionAgent = new Agent({
   name: 'PoolSelectionAgent',
   instructions: PROMPTS[AgentRole.POOL_SELECTION] + `
 
-IMPORTANT: When providing pool recommendations, you MUST use the recommendPools tool to return structured data. Always call this tool with your recommendations instead of just describing them in text.
+CRITICAL INSTRUCTIONS:
+1. ALWAYS respond to user requests by calling the recommendPools tool with specific pool recommendations
+2. NEVER just provide text-only responses - users expect clickable pool cards
+3. Analyze the provided pool data and rank ALL available pools from best to worst based on user criteria
+4. Provide specific reasoning for each pool's ranking
+5. Give confidence scores (0-100%) for each recommendation
 
-The tool expects:
-- An array of pool recommendations with pool addresses (IDs)
-- Each recommendation should include rank (1=best), reasoning, and confidence (0-100)
-- Always rank pools from best to worst (rank 1, 2, 3, etc.)
+The recommendPools tool expects:
+- Pool addresses from the provided pool data
+- Rankings from 1 (best match) to N (worst match) 
+- Clear reasoning explaining why each pool matches the user's criteria
+- Confidence scores indicating how sure you are about each recommendation
+
+Example user request: "I want safe pools with stable returns"
+Your response: Call recommendPools tool with all pools ranked by safety/stability, with detailed reasoning.
 `,
   tools: {
     recommendPools: {
@@ -116,10 +125,31 @@ export class OpenRouterClient {
         },
       ]);
       
-      // Extract structured data from tool calls - for now return null, will be implemented later
+      // Extract structured data from tool calls
       let structuredData = null;
-      // TODO: Extract structured data from Mastra agent tool calls
-      // This will be properly implemented once we understand the Mastra response structure
+      
+      if (response.toolCalls && response.toolCalls.length > 0) {
+        // Look for recommendPools tool calls
+        const poolRecommendationCall = response.toolCalls.find(call => call.toolName === 'recommendPools');
+        if (poolRecommendationCall && role === AgentRole.POOL_SELECTION) {
+          // Execute the recommendPools tool manually to get structured result
+          try {
+            const toolResult = {
+              type: 'poolRecommendations' as const,
+              pools: poolRecommendationCall.args.recommendations.map((rec: any) => ({
+                id: rec.poolAddress,
+                rank: rec.rank,
+                reasoning: rec.reasoning,
+                confidence: rec.confidence,
+                isRecommended: rec.rank === 1
+              }))
+            };
+            structuredData = toolResult;
+          } catch (error) {
+            console.warn('Failed to process pool recommendations:', error);
+          }
+        }
+      }
 
       return {
         response: response.text || 'No response generated',
